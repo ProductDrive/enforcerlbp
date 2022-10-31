@@ -8,6 +8,7 @@ The application contains various features that prompt patients to do exercises a
 #### Patient interface
 
 ♥️ Video capturing of exercise
+
 ♥️ Video session recording
 ♥️ Remote exercise tracking
 ♥️ Schedule exercise/sessions with therapist
