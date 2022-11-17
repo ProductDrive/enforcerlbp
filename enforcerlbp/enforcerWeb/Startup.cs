@@ -1,6 +1,7 @@
 using Data;
 using Data.Context;
 using DataAccess.UnitOfWork;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,6 +35,8 @@ namespace enforcerWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.AddMediatR(typeof(Startup));
 
             services.AddDbContext<EnforcerContext>(options =>
                options.UseSqlServer(
