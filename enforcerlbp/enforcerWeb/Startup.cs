@@ -1,6 +1,8 @@
+using AutoMapper;
 using Data;
 using Data.Context;
 using DataAccess.UnitOfWork;
+using enforcerWeb.Helper;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -14,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Services.Implementations;
+using Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +49,9 @@ namespace enforcerWeb
             //DataAccess
             services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
+            //Application Service
+            services.AddScoped<IUserService, UserService>();
+
 
             services.AddIdentity<EnforcerUser, IdentityRole>(options =>
             {
@@ -56,6 +63,14 @@ namespace enforcerWeb
                 options.Password.RequireLowercase = false;
                 options.Password.RequireNonAlphanumeric = false;
             }).AddEntityFrameworkStores<EnforcerContext>().AddDefaultTokenProviders();
+
+            var mappingConfig = new MapperConfiguration(mc => { mc.AddProfile(new MappingProfile()); });
+
+            var mapper = mappingConfig.CreateMapper();
+
+            services.AddSingleton(mapper);
+
+            services.AddAutoMapper(typeof(Startup));
 
             services.Configure<DataProtectionTokenProviderOptions>(d => d.TokenLifespan = TimeSpan.FromMinutes(10));
 
