@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Infrastructure.EmailServices
+namespace Infrastructures.EmailServices
 {
     public class EmailSenderCommand : IRequest<bool>
     {
