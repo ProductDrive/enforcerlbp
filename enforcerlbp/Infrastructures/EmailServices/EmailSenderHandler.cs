@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Infrastructure.EmailServices
+namespace Infrastructures.EmailServices
 {
     public class EmailSenderHandler : IRequestHandler<EmailSenderCommand, bool>
     {

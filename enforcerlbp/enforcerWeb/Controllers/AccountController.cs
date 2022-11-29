@@ -2,7 +2,7 @@
 using Data;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
-using Infrastructure.IdentityProviders;
+using Infrastructures.IdentityProviders;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -91,14 +91,13 @@ namespace enforcerWeb.Controllers
                 {
                     return StatusCode(500, response.ReturnModel);
                 }
-
+                var patient = _mapper.Map<AppUserDTO, PatientDTO>(model);
+                await _userService.CreatePatient(patient);
 
 
 
                 //generate token
                 var jwtTokenResponse = await GenerateJwtToken(response.User);
-                jwtTokenResponse.Response = "Successful";
-
                 return Ok(jwtTokenResponse);
             }
             catch (Exception ex)
@@ -196,7 +195,7 @@ namespace enforcerWeb.Controllers
                 Roles = roles.ToList()
             };
 
-            return new ResponseModel { Status = true, ReturnObj = response };
+            return new ResponseModel { Status = true, ReturnObj = response, Response="Successful" };
 
         }
 
@@ -221,5 +220,44 @@ namespace enforcerWeb.Controllers
                 return false;
             }
         }
+        [HttpPost("SignIn")]
+        public async Task<IActionResult> Login(LoginDTO model)
+        {
+            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@elo.com" : "";
+            if (string.IsNullOrWhiteSpace(emailToUse))
+            {
+                return BadRequest("All fields are required");
+            }
+
+            return Ok(await LogUserIn(model));
+
+        }
+
+        private async Task<ResponseModel> LogUserIn(LoginDTO model)
+        {
+            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@elo.com" : "";
+
+            //get the user
+            var user = await _userManager.FindByEmailAsync(emailToUse);
+
+            if (user == null)
+            {
+                return new ResponseModel { Status = false, Response = "Account with this email does not exist!" };
+            }
+
+            //get the user's roles
+            var roles = await _userManager.GetRolesAsync(user);
+
+            //check that the user is not null and that his password is correct
+            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            {
+                var jwtTokenResponse  = await GenerateJwtToken(user);
+                return jwtTokenResponse;
+            }
+            //return an authorization error if the checks fail
+            return new ResponseModel { Response = "Username or password invalid, please try again with correct details.", Status = false };
+        }
+
     }
+    
 }
