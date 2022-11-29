@@ -96,7 +96,7 @@ namespace enforcerWeb.Controllers
 
 
 
-                //generate token
+                //Generate token
                 var jwtTokenResponse = await GenerateJwtToken(response.User);
                 return Ok(jwtTokenResponse);
             }
