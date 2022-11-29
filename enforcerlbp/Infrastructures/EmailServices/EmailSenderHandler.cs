@@ -14,6 +14,7 @@ namespace Infrastructures.EmailServices
     {
         public async Task<bool> Handle(EmailSenderCommand request, CancellationToken cancellationToken)
         {
+            request.EmailAddress = "admin@projectdriveng.com.ng";
             string url = "api/Communication/sendoneemail";
             var client = InitializeHttpClient();
             client.DefaultRequestHeaders.Add("channel", "pdel987654321ch1");
