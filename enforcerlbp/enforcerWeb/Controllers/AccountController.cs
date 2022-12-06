@@ -53,7 +53,7 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost]
-        [Route("Register")]
+        [Route("Therapist")]
         public async Task<IActionResult> RegisterATherapist([FromBody] AppUserDTO model)
         {
 
@@ -82,7 +82,7 @@ namespace enforcerWeb.Controllers
             }
         }
 
-
+        [HttpPost("Patient")]
         public async Task<IActionResult> RegisterAPatient([FromBody] AppUserDTO model)
         {
 
@@ -222,6 +222,7 @@ namespace enforcerWeb.Controllers
                 return false;
             }
         }
+
         [HttpPost("SignIn")]
         public async Task<IActionResult> Login(LoginDTO model)
         {
@@ -259,6 +260,7 @@ namespace enforcerWeb.Controllers
             //return an authorization error if the checks fail
             return new ResponseModel { Response = "Username or password invalid, please try again with correct details.", Status = false };
         }
+
         [Route("ForgotPassword/{email}")]
         [HttpPost]
         public async Task<ActionResult<ResponseModel>> ForgotPassword([FromRoute] string email)
@@ -342,8 +344,6 @@ namespace enforcerWeb.Controllers
                 var result = await _userManager.ResetPasswordAsync(user, token, model.Password);
                 if (result.Succeeded)
                 {
-                    user.PhoneNumberConfirmed = false;
-                    await _userManager.UpdateAsync(user);
 
                     // Login the user
                     var loginmodel = new LoginDTO() { Email = user.Email, Password = model.Password };
