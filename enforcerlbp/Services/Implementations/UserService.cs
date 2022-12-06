@@ -116,14 +116,47 @@ namespace Services.Implementations
           var physioToUpdate = await  _unitOfWorkPhysio.Repository.GetByID(physioId);
 
             // 2. accept properties to change
+            physioToUpdate.FirstName = string.IsNullOrWhiteSpace(therapist.FirstName) ? physioToUpdate.FirstName : therapist.FirstName;
+            physioToUpdate.MiddleName = string.IsNullOrWhiteSpace(therapist.MiddleName) ? physioToUpdate.MiddleName : therapist.MiddleName;
+            physioToUpdate.LastName = string.IsNullOrWhiteSpace(therapist.LastName) ? physioToUpdate.LastName : therapist.LastName;
             physioToUpdate.PhysioSessionID = therapist.PhysioSessionID != Guid.Empty?therapist.PhysioSessionID : physioToUpdate.PhysioSessionID;
             physioToUpdate.About = string.IsNullOrWhiteSpace(therapist.About) ? physioToUpdate.About : therapist.About; 
-            physioToUpdate.DateCreated
+            //physioToUpdate.DateCreated = physioToUpdate.DateCreated;
+            physioToUpdate.DateLastModified = DateTime.UtcNow;
+            physioToUpdate.Age = therapist.Age == 0 ? physioToUpdate.Age : therapist.Age;
+            physioToUpdate.IsVerified = therapist.IsVerified == false ? physioToUpdate.IsVerified : therapist.IsVerified;
+            physioToUpdate.Ratings = therapist.Ratings == 0 ? physioToUpdate.Ratings : therapist.Ratings;
+            physioToUpdate.DOB = therapist.DOB;
+            physioToUpdate.Addressline = string.IsNullOrWhiteSpace(therapist.Addressline) ? physioToUpdate.Addressline : therapist.Addressline;
+            physioToUpdate.PhoneNumber = string.IsNullOrWhiteSpace(therapist.PhoneNumber) ? physioToUpdate.PhoneNumber : therapist.PhoneNumber;
+            physioToUpdate.Country = string.IsNullOrWhiteSpace(therapist.Country) ? physioToUpdate.Country : therapist.Country;
+            physioToUpdate.ProfilePictureUrl = string.IsNullOrWhiteSpace(therapist.ProfilePictureUrl) ? physioToUpdate.ProfilePictureUrl : therapist.ProfilePictureUrl;
+            physioToUpdate.Gender = string.IsNullOrWhiteSpace(therapist.Gender) ? physioToUpdate.Gender : therapist.Gender;
+            physioToUpdate.Email = string.IsNullOrWhiteSpace(therapist.Email) ? physioToUpdate.Email : therapist.Email;
+            physioToUpdate.Experience = therapist.Experience == 0 ? physioToUpdate.Experience : therapist.Experience;
+            physioToUpdate.State = string.IsNullOrWhiteSpace(therapist.State) ? physioToUpdate.State : therapist.State;
+            physioToUpdate.ConsultationServiceID = therapist.ConsultationServiceID != Guid.Empty ? therapist.ConsultationServiceID : physioToUpdate.ConsultationServiceID;
+
             // 3. update the entity
+            _unitOfWorkPhysio.Repository.Update(physioToUpdate);
             // 4. save changes
-            return null;
+           await _unitOfWorkPhysio.Save();
+           return new ResponseModel { Status = true, Response = "Update Successful",ReturnObj = physioToUpdate};
             //dates, age, isverified, ratings
         }
 
+
+        public async Task<ResponseModel> Verification(Guid physiotherapistId, Physiotherapist physio)
+        {
+            var physioToVerify = await _unitOfWorkPhysio.Repository.GetByID(physiotherapistId);
+            physioToVerify.IsVerified = true;
+            _unitOfWorkPhysio.Repository.Update(physioToVerify);
+            await _unitOfWorkPhysio.Save();
+            return new ResponseModel { Status=true, Response = "Physiotherapist is Verified", ReturnObj = physioToVerify};
+
+
+        }
+
     }
+    
 }
