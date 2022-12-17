@@ -53,8 +53,9 @@ namespace enforcerWeb
             services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
             //Application Service
-            services.AddScoped<IUserService, UserService>();
-
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IFirebase, Services.Implementations.Firebase>();
+            services.AddTransient<IExerciseService, ExerciseService>();
 
             services.AddIdentity<EnforcerUser, IdentityRole>(options =>
             {
