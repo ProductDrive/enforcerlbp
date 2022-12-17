@@ -1,4 +1,5 @@
-﻿using Entities.CompanySetup;
+﻿using Entities;
+using Entities.CompanySetup;
 using Entities.Consultation;
 using Entities.Documents;
 using Entities.Users;
@@ -22,6 +23,16 @@ namespace Data.Context
         public DbSet<ConsultationService> ConsultationServices{ get; set; }
         public DbSet<PhysioSession> PhysioSessions{ get; set; }
         public DbSet<ProcessSetting>ProcessSettings { get; set; }
+
+        //Exercise
+        public DbSet<Exercise> Exercises{ get; set; }
+        public DbSet<ExercisePrescription> ExercisePrescriptions { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
+        public DbSet<FeedbackReply> FeedbackReplies{ get; set; }
+
+
+
+
 
 
     }
