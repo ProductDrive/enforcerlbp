@@ -7,7 +7,6 @@ namespace enforcerWeb.Helper
     {
         public static (string hash, string otp) GetOTPHash(string ans)
         {
-            //Console.WriteLine("Enter your position key from letter A - J");
             var answer = ans.ToUpper();
             int[] keyPositions = new int[answer.Length];
             char[] PkeyLetters = new char[] { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J' };
@@ -19,8 +18,7 @@ namespace enforcerWeb.Helper
                 {
                     keyPositions[i] = Array.IndexOf(PkeyLetters, Pkey[i]);
                 }
-
-                //return keyPositions;
+            
             }
             else
             {
@@ -29,17 +27,13 @@ namespace enforcerWeb.Helper
             }
 
             int[] otp = GetOTP(answer);
-            //foreach (var key in otp)
-            //{
-            //    Console.Write(key);
-            //}
-            //Console.WriteLine("------------");
+            
 
 
 
             //match otp keys
             char[] otpString = new char[otp.Length];
-            char[] productD = new char[] { 'P', 'R', 'O', 'D', 'U', 'C', 'T', 'R', 'I', 'V' };
+            char[] productD = new char[] { 'P', 'R', 'O', 'D', 'U', 'C', 'T','I', 'V','E' };
             for (var i = 0; i < otp.Length; i++)
             {
                 otpString[i] = productD[otp[i]];
@@ -62,10 +56,7 @@ namespace enforcerWeb.Helper
                 var pos = keyPositions[i];
                 var otpDigitString = otpString[i];
                 newGuid[pos] = otpDigitString;
-                //newGuid[keyPositions[i]] = otpString[i];
-
-                //char[] final = newGuid[keyPositions[i]];
-                //final[i] = otpString[i];
+               
             }
 
             var result = String.Empty;
@@ -80,8 +71,6 @@ namespace enforcerWeb.Helper
                 result = String.Concat(String.Join("", newGuid).ToLower(), ".", answer);
 
             }
-            Console.WriteLine(result);
-            //return(result,otp.ToString());
             return (result, string.Join("", Array.ConvertAll(otp, delegate (int s) { return Convert.ToString(s); })));
         }
 
