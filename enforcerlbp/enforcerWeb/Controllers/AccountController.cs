@@ -2,6 +2,8 @@
 using Data;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using enforcerWeb.Helper;
+using Infrastructures.EmailServices;
 using Infrastructures.IdentityProviders;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -51,7 +53,7 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost]
-        [Route("Register")]
+        [Route("Therapist")]
         public async Task<IActionResult> RegisterATherapist([FromBody] AppUserDTO model)
         {
 
@@ -80,7 +82,7 @@ namespace enforcerWeb.Controllers
             }
         }
 
-
+        [HttpPost("Patient")]
         public async Task<IActionResult> RegisterAPatient([FromBody] AppUserDTO model)
         {
 
@@ -96,7 +98,7 @@ namespace enforcerWeb.Controllers
 
 
 
-                //generate token
+                //Generate token
                 var jwtTokenResponse = await GenerateJwtToken(response.User);
                 return Ok(jwtTokenResponse);
             }
@@ -220,6 +222,7 @@ namespace enforcerWeb.Controllers
                 return false;
             }
         }
+
         [HttpPost("SignIn")]
         public async Task<IActionResult> Login(LoginDTO model)
         {
@@ -258,6 +261,104 @@ namespace enforcerWeb.Controllers
             return new ResponseModel { Response = "Username or password invalid, please try again with correct details.", Status = false };
         }
 
+        [Route("ForgotPassword/{email}")]
+        [HttpPost]
+        public async Task<ActionResult<ResponseModel>> ForgotPassword([FromRoute] string email)
+        {
+            //check that the email is not empty
+            if (string.IsNullOrEmpty(email))
+                //return an error if it is
+                return BadRequest(new ResponseModel { Response = "Supply user email", Status = false });
+
+            try
+            {
+                //check if the user exists
+                var user = await _userManager.FindByEmailAsync(email);
+
+                if (user == null)
+                    //if not return an error
+                    return BadRequest(new ResponseModel { Response = "Oops seems you do not have an account with us. You can easily register now", Status = false });
+
+                //generate a reset token from OTPGenerator class
+                 var Token = OTPGenerator.GetOTPHash("eagi");
+                 
+                //send  the user an email template containing a reset link and OTP
+                await _mediatR.Send(new EmailSenderCommand
+                {
+                    Contacts = new List<ContactsModel>()
+                {
+                    new ContactsModel
+                    {
+                        Email = "afeexclusive@gmail.com",
+                        Name = "Ayokunle"
+                    },
+                    new ContactsModel
+                    {
+                        Email = "adeoyetemitayo99@gmail.com",
+                        Name = "Tayo"
+                    }
+                },
+                    EmailDisplayName = "Health Enforcer",
+                    Message = Token.otp,
+                    Subject = "Password Reset OTP",
+                    Category = "",
+
+
+                }) ;
+
+                return Ok(new ResponseModel { Response = "One Time Password sent successfully", Status = true });
+            }
+            catch (Exception ex)
+            {
+
+                return Ok(new ResponseModel { Response = ex.InnerException.Message ?? ex.Message, Status = true });
+            }
+        }
+
+        [HttpPost]
+        [Route("passwordreset")]
+        public async Task<IActionResult> ResetPassword(PasswordResetDTO model)
+        {
+            try
+            {
+                // Find the user by email
+                var user = await _userManager.FindByEmailAsync(model.Email);
+
+
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                if (user.UserName != user.Email)
+                {
+                    user.UserName = user.Email;
+                    user.NormalizedUserName = user.Email.ToUpper();
+                    await _userManager.UpdateAsync(user);
+                }
+
+
+
+                // reset the user password
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, model.Password);
+                if (result.Succeeded)
+                {
+
+                    // Login the user
+                    var loginmodel = new LoginDTO() { Email = user.Email, Password = model.Password };
+                    var isLoginSuccessfull = await Login(loginmodel);
+                    return Ok(isLoginSuccessfull);
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.InnerException.Message);
+            }
+            return BadRequest();
+        }
     }
     
 }
