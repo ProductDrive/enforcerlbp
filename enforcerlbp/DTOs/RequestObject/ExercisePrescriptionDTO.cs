@@ -1,20 +1,17 @@
-﻿using Entities.Users;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Entities
+namespace DTOs.RequestObject
 {
-    public class ExercisePrescription
+    public class ExercisePrescriptionDTO
     {
+
         public Guid ID { get; set; }
         public Guid ExerciseId { get; set; }
-        public Exercise Exercise { get; set; }
-
+        public string ExerciseName { get; set; }
         public Guid PatientId { get; set; }
-        public Patient Patient { get; set; }
         public Guid PhysiotherapistId { get; set; }
-        public Physiotherapist Physiotherapist { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool IsCompleted { get; set; }
@@ -28,5 +25,9 @@ namespace Entities
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
 
+        public ExercisePrescriptionDTO()
+        {
+            ExerciseSummary = $"{ExerciseName}-{Repetitions}-{Time} to be completed {EndDate.ToString("d")}";
+        }
     }
 }

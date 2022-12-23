@@ -58,10 +58,10 @@ namespace enforcerWeb.Controllers
                          }
                      },
                     EmailDisplayName = "Health Enforcer",
-                    Subject = $"Connection Notification from {request.PatientName}"
+                    Subject = $"Connection Notification from {request.PatientName}",
+                    Message = NotificationHelper.GetNotificationMessage(request).Split('|')[1]
                 });
             }
-
             return Ok(result);
         }
 

@@ -21,7 +21,8 @@ namespace enforcerWeb.Helper
             CreateMap<PatientTherapist, ConnectionRequestDTO>();
             CreateMap<Notification, NotificationSenderCommand>();
             CreateMap<NotificationSenderCommand, Notification>();
-
+            CreateMap<ExercisePrescription, ExercisePrescriptionDTO>();
+            CreateMap<ExercisePrescriptionDTO, ExercisePrescription>();
 
         }
     }
