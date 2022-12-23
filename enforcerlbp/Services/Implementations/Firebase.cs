@@ -26,21 +26,13 @@ namespace Services.Implementations
             _firebaseStore = firebaseStore.Value;
         }
 
-        public async Task <string> FirebaseFileUpload(IFormFile file, string folderName,  Guid? physiotherapistId)
+        public async Task <string> FirebaseFileUpload(IFormFile file, string folderName)
         {
-            //string[] allowedExtensions = { ".doc", ".docx", ".ppt", ".pdf" };
             string getExtension = Path.GetExtension(file.FileName);
-            //if (!allowedExtensions.Contains(getExtension))
-            //{
-            //    return new ResponseModel { Status = false, Response = "Success", ReturnObj = "File select is not a document or the document is not supported.Ensure you select any of the listed document format: .doc, .docx, .ppt, .pdf" };
-            //}
-
             if (file.Length > 0)
             {
-
                 try
                 {
-
                     Stream ms = file.OpenReadStream();
 
                     var auth = new FirebaseAuthProvider(new FirebaseConfig(_firebaseStore.ApiKey));

@@ -1,18 +1,17 @@
-﻿using System;
-using Entities.Documents;
+﻿using Entities.Consultation;
+using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
 using System.Text;
-using Entities.Consultation;
 
-namespace Entities.Users
+namespace DTOs.ResponseObject
 {
-    public class Physiotherapist
+    public class PhysioTherapistConnectDTO
     {
         public Guid ID { get; set; }
         public string FirstName { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }
+        public string FullName => $"{FirstName} {MiddleName??""} {LastName}";
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string ProfilePictureUrl { get; set; }
@@ -26,14 +25,11 @@ namespace Entities.Users
         public string About { get; set; }
         public string Speciality { get; set; }
         public string Gender { get; set; }
-        public ICollection<ConsultationService> ConsultationServices  { get; set; }
-        public ICollection<PhysioSession> PhysioSessions { get; set; }
+        public List<ConsultationService> ConsultationService { get; set; }
+        public List<PhysioSession> PhysioSession { get; set; }
         public bool IsVerified { get; set; }
-        public ICollection<VerificationDocument> VerificationDocuments { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateLastModified { get; set; }
         public bool IsOnboarded { get; set; }
-
-
     }
 }
