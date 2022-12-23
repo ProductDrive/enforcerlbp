@@ -22,6 +22,8 @@ namespace Entities
         public string Set { get; set; }
         public string Hold { get; set; }
         public string Time { get; set; }
+        public string Description { get; set; }
+        public string ExerciseSummary { get; set; }
         public string SubmittedVideoUrl { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }

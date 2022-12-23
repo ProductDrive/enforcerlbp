@@ -10,6 +10,11 @@ namespace Services.Interfaces
 {
     public interface IExerciseService
     {
-        
+        Task<List<ExercisePrescription>> CheckDefaulters();
+        Task<ResponseModel> CompleteExercise(ExerciseCompleteDTO completeExercise);
+        Task<ResponseModel> CreateExercise(Exercise model);
+        Task<ResponseModel> ExerciseCategory();
+        Task<ResponseModel> GetExercise(Guid Id);
+        ResponseModel SuggestedExercise(Guid physiotherapistId);
     }
 }
