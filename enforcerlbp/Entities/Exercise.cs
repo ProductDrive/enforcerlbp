@@ -6,7 +6,7 @@ namespace Entities
 {
     public  class Exercise
     {
-        public Guid Id{ get; set; }
+        public Guid ID{ get; set; }
         public string Name{ get; set; }
         public string Description{ get; set; }
         public string FileUrl { get; set; }

@@ -69,8 +69,8 @@ namespace Services.Implementations
             {
                 return new ResponseModel { Status = false, Response = "File select is not a document or the document is not supported.Ensure you select any of the listed document format: .doc, .docx, .ppt, .pdf" };
             }
-            var returnedDegreeUrl = await _firebase.FirebaseFileUpload(document.DegreeCert, "verificationdocs", document.PhysiotherapistId);
-            var returnedLicenseUrl = await _firebase.FirebaseFileUpload(document.License, "verificationdocs", document.PhysiotherapistId);
+            var returnedDegreeUrl = await _firebase.FirebaseFileUpload(document.DegreeCert, "verificationdocs");
+            var returnedLicenseUrl = await _firebase.FirebaseFileUpload(document.License, "verificationdocs");
             var Documents = new List<VerificationDocument>()
             {
                 new VerificationDocument

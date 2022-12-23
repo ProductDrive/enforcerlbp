@@ -9,7 +9,7 @@ namespace Services.Interfaces
 {
     public interface IFirebase
     {
-        Task<string> FirebaseFileUpload(IFormFile file, string folderName,  Guid? physiotherapistId);
+        Task<string> FirebaseFileUpload(IFormFile file, string folderName);
         
     }
 }

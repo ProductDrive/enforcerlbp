@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using enforcerWeb.Helper;
 using Entities.Users;
 using Infrastructures.EmailServices;
 using Infrastructures.NotificationService;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -30,31 +32,20 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost("sendconnection")]
-        public async Task<ResponseModel> ConnectToATherapist(ConnectionRequestDTO request)
+        public async Task<IActionResult> ConnectToATherapist(ConnectionRequestDTO request)
         {
             var result = await _userService.PatientConnectRequest(request);
-
+            request.ConnectionStatus = ConnectionStatus.sent;
             if (result.Status)
             {
                 //send notification
-                await _mediatR.Send(new NotificationSenderCommand
+                await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersManyMessages(new List<NotificationRequester>()
                 {
-                    SenderCommands = new List<NotificationCommand>()
-                   {
-                       new NotificationCommand
-                       {
-                            Message = "Notification of your connection has been sent to the physiotherapist",
-                            OwnerId = request.PatientID
-                       },
-                       new NotificationCommand
-                       {
-                           Message = request.Message?? $"Hello,{request.PatientName} likes your services and will like to connect with you",
-                           OwnerId = request.PhysiotherapistID
-                       }
-                   }
-                });
+                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(request).Split('|')[0], OwnerID = request.PatientID},
+                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(request).Split('|')[1], OwnerID = request.PhysiotherapistID}
+                } ));
                 var query = await _userService.GetAPhysioTherapist(request.PhysiotherapistID);
-                var physio = (PhysioTherapistConnectDTO)query.ReturnObj;
+                var physio = JsonConvert.DeserializeObject<PhysioTherapistConnectDTO>(JsonConvert.SerializeObject(query.ReturnObj));
                 //send email
                 await _mediatR.Send(new EmailSenderCommand
                 {
@@ -71,7 +62,41 @@ namespace enforcerWeb.Controllers
                 });
             }
 
-            return result;
+            return Ok(result);
         }
+
+        [HttpPost("editconnection")]
+        public async Task<IActionResult> UpdateConnection(ConnectionRequestDTO request)
+        {
+            var result = await _userService.PatientConnectStatus(request);
+            if (result.Status)
+            {
+                var updatePatientTherapist = JsonConvert.DeserializeObject<ConnectionRequestDTO>(JsonConvert.SerializeObject(result.ReturnObj));
+                //send notification
+                
+                if(updatePatientTherapist.ConnectionStatus != ConnectionStatus.disconnected)
+                {
+                    var ownerIds = new List<Guid>() { request.PatientID};
+                    await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|')[0]));
+                }
+
+                if (updatePatientTherapist.ConnectionStatus == ConnectionStatus.disconnected)
+                {
+                    await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersManyMessages(new List<NotificationRequester>()
+                {
+                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|')[0], OwnerID = request.PatientID},
+                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|')[1], OwnerID = request.PhysiotherapistID}
+                }));
+                }
+
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("mythetapists")]
+        public IActionResult GetMyPhysiotherapists(Guid patientId) => Ok(_userService.MyPhysiotherapists(patientId));
+
+
+       
     }
 }

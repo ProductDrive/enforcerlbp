@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DataAccess.UnitOfWork;
+using DTOs.RequestObject;
 using DTOs.ResponseObject;
 using Entities;
 using Entities.Users;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,6 +21,7 @@ namespace Services.Implementations
         private readonly IUnitOfWork<Patient> _unitOfWorkPatient;
         private readonly IUnitOfWork<Exercise> _unitOfWorkExercise;
         private readonly IUnitOfWork<ExercisePrescription> _unitOfWorkExercisePrescription;
+        private readonly IFirebase _firebaseService;
         private readonly IMapper _mapper;
 
         public ExerciseService(
@@ -26,6 +29,7 @@ namespace Services.Implementations
             IUnitOfWork<Patient> unitOfWorkPatient,
             IUnitOfWork<Exercise> unitOfWorkExercise,
             IUnitOfWork<ExercisePrescription> unitOfWorkExercisePrescription,
+            IFirebase firebaseService,
             IMapper mapper
             )
         {
@@ -33,6 +37,7 @@ namespace Services.Implementations
             _unitOfWorkPatient = unitOfWorkPatient;
             _unitOfWorkExercise = unitOfWorkExercise;
             _unitOfWorkExercisePrescription = unitOfWorkExercisePrescription;
+            _firebaseService = firebaseService;
             _mapper = mapper;
         }
         #region Exercise Methods
@@ -79,5 +84,5 @@ namespace Services.Implementations
         //public method that takes the two as parameter exercisePrescription and feedback id as optionalparameter
         #endregion
     }
-}
+}    
 
