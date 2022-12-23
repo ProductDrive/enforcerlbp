@@ -60,25 +60,92 @@ namespace Services.Implementations
             return new ResponseModel { Status = true, Response="Successful", ReturnObj = exerciseCategory };
 
         }
-        public  ResponseModel SuggestedExercise( Guid physiotherapistId)
+
+        #endregion
+
+        #region ExercisePrescription
+
+        public ResponseModel SuggestedExercise(Guid physiotherapistId)
         {
-           var latestPrescription = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
-                .Include(s => s.Exercise)
-                .Where(s => s.PhysiotherapistId == physiotherapistId)
-                .OrderByDescending(s => s.DateCreated).Take(4);
-            if(latestPrescription != null && latestPrescription.Any())
+            var latestPrescription = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
+                 .Include(s => s.Exercise)
+                 .Where(s => s.PhysiotherapistId == physiotherapistId)
+                 .OrderByDescending(s => s.DateCreated).Take(4);
+            if (latestPrescription != null && latestPrescription.Any())
             {
                 var suggestedExercise = latestPrescription.ToList()
                     .Select(s => s.Exercise).ToList();
                 return new ResponseModel { Status = true, Response = "Successful", ReturnObj = suggestedExercise };
             }
             return new ResponseModel { Status = false, Response = "failed" };
-   
+        }
+
+        public ResponseModel GetMyPrescription(Guid ownerId, bool isPatient)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                if (isPatient)
+                {
+                    response.ReturnObj = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
+                    .Where(x => x.PatientId == ownerId);
+                }
+                else
+                {
+                    response.ReturnObj = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
+                    .Where(x => x.PhysiotherapistId == ownerId);
+                }
+                response.Status = true;
+                response.Response = "Successful";
+                return response;
+            }
+            catch (Exception)
+            {
+                return new ResponseModel { Status = false, Response = "Something went wrong while get exercise prescription" };
+            }
+            
 
         }
-        #endregion
 
-        #region ExercisePrescription
+        public async Task<ResponseModel> GetAPrescription(Guid Id)
+        {
+            return new ResponseModel { Status = true, Response="Successful", ReturnObj = await _unitOfWorkExercisePrescription.Repository.GetByID(Id) };
+        }
+
+        public async Task<ResponseModel> CreateAnExercisePrescription(ExercisePrescriptionDTO request)
+        {
+            if (request.PatientId == Guid.Empty
+                && request.PhysiotherapistId == Guid.Empty
+                && request.IsCompleted
+                && string.IsNullOrWhiteSpace(request.ExerciseName)
+                && request.ExerciseId == Guid.Empty
+                )
+            {
+                return new ResponseModel { Status = false, Response = "parameter error", ReturnObj = request };
+            }
+
+            if (request.StartDate == default) request.StartDate = DateTime.Now;
+            if (request.StartDate == default) request.EndDate = DateTime.Now.AddDays(5);
+
+            var prescription = _mapper.Map<ExercisePrescription>(request);
+            try
+            {
+                await _unitOfWorkExercisePrescription.Repository.Create(prescription);
+                await _unitOfWorkExercisePrescription.Save();
+                //TODO: send notification and email to patient
+                prescription.Patient = new Patient();
+                prescription.Patient = await _unitOfWorkPatient.Repository.GetByID(request.PatientId);
+                return new ResponseModel { Status = true, Response = "Save successfully", ReturnObj = prescription };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = $"{ex.Message??ex.InnerException.Message}", ReturnObj = request };
+            }
+
+            
+        }
+
+
         //2 private method. 1st will exercisepreescription by id
         //2nd get exerciseprescription by feedback id
         //public method that takes the two as parameter exercisePrescription and feedback id as optionalparameter
@@ -139,6 +206,8 @@ namespace Services.Implementations
 
             return await allPrescription.ToListAsync();
         }
+
+    
 
         #endregion
 

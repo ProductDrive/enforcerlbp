@@ -55,6 +55,41 @@ namespace enforcerWeb.Controllers
             });
             return Ok(result);
         }
+
+        [HttpGet("myexercises")]
+        public IActionResult GetMyExercises(Guid ownerId, bool isPatient) => Ok(_exerciseService.GetMyPrescription (ownerId, isPatient));
+
+        [HttpGet("prescription")]
+        public async Task<IActionResult> GetAPrescription(Guid id) => Ok(await _exerciseService.GetAPrescription(id));
+
+        [HttpPost("prescription")]
+        public async Task<IActionResult> AddExercisePrescription(ExercisePrescriptionDTO request)
+        {
+            var result = await _exerciseService.CreateAnExercisePrescription(request);
+            string jsonformOfresult = JsonConvert.SerializeObject(result.ReturnObj);
+            ExercisePrescription eP = JsonConvert.DeserializeObject<ExercisePrescription>(jsonformOfresult);
+
+            //send notification patient
+            var ownerIds = new List<Guid>() { eP.PatientId };
+            string message = $"An exercise has be prescribed for you. Kindly check your list of exercise prescriptions";
+            await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
+            //send email
+            await _mediatR.Send(new EmailSenderCommand
+            {
+                Contacts = new List<ContactsModel>
+                     {
+                         new ContactsModel
+                         {
+                              Email = eP.Patient.Email,
+                              Name = eP.Patient.FirstName
+                         }
+                     },
+                EmailDisplayName = "Health Enforcer",
+                Subject = $"Exercise Prescription",
+                Message = message
+            });
+            return Ok(result);
+        }
     }
 }
 
