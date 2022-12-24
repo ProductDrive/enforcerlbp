@@ -226,15 +226,15 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost("SignIn")]
-        public async Task<IActionResult> Login(LoginDTO model)
+        public async Task<ResponseModel> Login(LoginDTO model)
         {
             var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@productdrive.com" : "";
             if (string.IsNullOrWhiteSpace(emailToUse))
             {
-                return BadRequest("All fields are required");
+                return new ResponseModel {  Status = false, Response = "All fields are required" };
             }
             model.Email = emailToUse;
-            return Ok(await LogUserIn(model));
+            return await LogUserIn(model);
 
         }
 
@@ -312,7 +312,7 @@ namespace enforcerWeb.Controllers
 
         [HttpPost]
         [Route("passwordreset")]
-        public async Task<IActionResult> ResetPassword(PasswordResetDTO model)
+        public async Task<ResponseModel> ResetPassword(PasswordResetDTO model)
         {
             try
             {
@@ -322,7 +322,7 @@ namespace enforcerWeb.Controllers
 
                 if (user == null)
                 {
-                    return NotFound();
+                    return new ResponseModel {  Status = false, Response="User not found"};
                 }
 
                 if (user.UserName != user.Email)
@@ -342,17 +342,17 @@ namespace enforcerWeb.Controllers
 
                     // Login the user
                     var loginmodel = new LoginDTO() { Email = user.Email, Password = model.Password };
-                    var isLoginSuccessfull = await Login(loginmodel);
-                    return Ok(isLoginSuccessfull);
+                    var isLoginSuccessfull = await LogUserIn(loginmodel);
+                    return isLoginSuccessfull;
                 }
 
             }
             catch (Exception ex)
             {
 
-                return BadRequest(ex.InnerException.Message);
+                return new ResponseModel { Status = false, Response = ex.InnerException.Message };
             }
-            return BadRequest();
+            return new ResponseModel { Status = false, Response = "something went wrong" }; ;
         }
     }
     

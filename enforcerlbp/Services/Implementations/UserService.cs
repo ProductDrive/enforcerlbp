@@ -153,7 +153,7 @@ namespace Services.Implementations
         public async Task<ResponseModel> GetAPhysioTherapist(Guid Id)
         {
             var physio = await _unitOfWorkPhysio.Repository.GetByID(Id);
-            var physioDTO = _mapper.Map<PhysioTherapistConnectDTO>(physio);
+            var physioDTO = _mapper.Map<PhysiotherapistDTO>(physio);
             return new ResponseModel { Status = true, Response = "successful", ReturnObj = physioDTO };
         }
 
@@ -196,7 +196,7 @@ namespace Services.Implementations
         public ResponseModel MyPhysiotherapists(Guid patientId)
         {
             var connectionQuery = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
-                .Where(p => p.PatientID == patientId);
+                .Where(p => p.PatientID == patientId && p.ConnectionStatus == ConnectionStatus.accepted);
             if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not connected to any physiotherapist" };
 
             var physiosIds = connectionQuery.Select(x => x.PhysiotherapistID).ToList();
@@ -217,7 +217,14 @@ namespace Services.Implementations
         {
             var isConnected = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
                 .FirstOrDefault(x => x.PatientID == request.PatientID && x.PhysiotherapistID == request.PhysiotherapistID);
-            if (isConnected != null) return new ResponseModel { Status = false, Response = $"You are already a connection" };
+            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.accepted) return new ResponseModel { Status = false, Response = $"You are already a connection" };
+            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.sent) return new ResponseModel { Status = false, Response = $"Your connection request has been sent earlier but has not been accepted. Kindly reach out to the physiotherapist" };
+            if (isConnected != null && (isConnected.ConnectionStatus == ConnectionStatus.rejected || isConnected.ConnectionStatus == ConnectionStatus.disconnected))
+            {
+                request.ConnectionStatus = ConnectionStatus.sent;
+                return await PatientConnectStatus(request);
+            }
+
             try
             {
                 var patPhy = _mapper.Map<PatientTherapist>(request);
@@ -252,7 +259,7 @@ namespace Services.Implementations
 
                 //TODO: sent noification and email here
                 
-                return new ResponseModel { Status = true, Response = "Updated Succefully", ReturnObj = isConnected};
+                return new ResponseModel { Status = true, Response = "Updated Succefully", ReturnObj = request};
             }
             catch (Exception ex)
             {

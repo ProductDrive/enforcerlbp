@@ -16,7 +16,7 @@ namespace enforcerWeb.Helper
             switch (updatePatientTherapist.ConnectionStatus)
             {
                 case ConnectionStatus.sent:
-                    message = $"Notification of your connection has been sent to the physiotherapist|Hello,{updatePatientTherapist.PatientName} likes your services and will like to connect with you";
+                    message = $"Notification of your connection has been sent to the physiotherapist|Hello, {updatePatientTherapist.PatientName} likes your services and will like to connect with you. Kindly go to notifications in Health Enforcer app to accept connection";
                     break;
                 case ConnectionStatus.accepted:
                     message = $"Your connection request has been accepted by {updatePatientTherapist.TherapistName}";
@@ -25,7 +25,7 @@ namespace enforcerWeb.Helper
                     message = $"Your connection request has been declined by {updatePatientTherapist.TherapistName}";
                     break;
                 case ConnectionStatus.disconnected:
-                    message = $"You are no longer a connection with {updatePatientTherapist.PatientName}|You are no longer a connection with {updatePatientTherapist.TherapistName}";
+                    message = $"You are no longer a connection with {updatePatientTherapist.TherapistName}|You are no longer a connection with {updatePatientTherapist.PatientName}";
                     break;
                 default:
                     break;

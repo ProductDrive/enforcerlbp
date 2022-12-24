@@ -4,6 +4,7 @@ using Data.Context;
 using DataAccess.UnitOfWork;
 using enforcerWeb.Helper;
 using Infrastructures.EmailServices;
+using Infrastructures.NotificationService;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -45,6 +46,7 @@ namespace enforcerWeb
             services.AddControllers();
 
             services.AddMediatR(typeof(EmailSenderHandler));
+            services.AddMediatR(typeof(NotificationSenderHandler));
             //services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 
             services.AddDbContext<EnforcerContext>(options =>
@@ -106,7 +108,7 @@ namespace enforcerWeb
 
                 options.AddPolicy("RequireLoggedIn",
                     policy => policy.RequireAuthenticatedUser());
-                options.AddPolicy("SuperUser", policy=>policy.RequireRole( "Owner","Developer").RequireAuthenticatedUser());
+                options.AddPolicy("SuperUser", policy=>policy.RequireRole( "Owner", "Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Admin", policy=>policy.RequireRole("Admin", "Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Therapist", policy=>policy.RequireRole("Admin","Physiotherapist","Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Patient", policy=>policy.RequireRole("Admin","Patient","Developer").RequireAuthenticatedUser());
@@ -125,8 +127,7 @@ namespace enforcerWeb
                 });
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.
-                      \r\n\r\nExample: 'Bearer 12345abcdef'",
+                    Description = @"JWT Authorization header using the Bearer scheme: 'Bearer 12345abcdef'",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey,
@@ -169,6 +170,8 @@ namespace enforcerWeb
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication(); //How is this missing here until now
 
             app.UseAuthorization();
 

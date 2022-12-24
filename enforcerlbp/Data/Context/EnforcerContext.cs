@@ -30,7 +30,9 @@ namespace Data.Context
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<FeedbackReply> FeedbackReplies{ get; set; }
 
-
+        //Connection
+        public DbSet<PatientTherapist> PatientTherapists { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
 
 

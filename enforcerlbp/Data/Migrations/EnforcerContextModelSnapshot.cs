@@ -121,6 +121,8 @@ namespace Data.Migrations
 
                     b.HasKey("ID");
 
+                    b.HasIndex("PhysiotherapistID");
+
                     b.ToTable("ConsultationServices");
                 });
 
@@ -143,6 +145,8 @@ namespace Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("PhysiotherapistID");
 
                     b.ToTable("PhysioSessions");
                 });
@@ -171,9 +175,12 @@ namespace Data.Migrations
 
             modelBuilder.Entity("Entities.Exercise", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
@@ -190,14 +197,14 @@ namespace Data.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("ID");
 
                     b.ToTable("Exercises");
                 });
 
             modelBuilder.Entity("Entities.ExercisePrescription", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -207,23 +214,26 @@ namespace Data.Migrations
                     b.Property<DateTime>("DateModified")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("ExerciseId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ExerciseSummary")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Hold")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Patient")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Physiotherapist")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("PhysiotherapistId")
                         .HasColumnType("uniqueidentifier");
@@ -237,10 +247,19 @@ namespace Data.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("SubmittedVideoUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Time")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("ID");
+
+                    b.HasIndex("ExerciseId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("PhysiotherapistId");
 
                     b.ToTable("ExercisePrescriptions");
                 });
@@ -305,6 +324,29 @@ namespace Data.Migrations
                     b.ToTable("FeedbackReplies");
                 });
 
+            modelBuilder.Entity("Entities.Notification", b =>
+                {
+                    b.Property<Guid>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("Entities.Users.Patient", b =>
                 {
                     b.Property<Guid>("ID")
@@ -358,6 +400,26 @@ namespace Data.Migrations
                     b.ToTable("Patients");
                 });
 
+            modelBuilder.Entity("Entities.Users.PatientTherapist", b =>
+                {
+                    b.Property<Guid>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ConnectionStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PatientID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PhysiotherapistID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("PatientTherapists");
+                });
+
             modelBuilder.Entity("Entities.Users.Physiotherapist", b =>
                 {
                     b.Property<Guid>("ID")
@@ -372,9 +434,6 @@ namespace Data.Migrations
 
                     b.Property<int>("Age")
                         .HasColumnType("int");
-
-                    b.Property<Guid>("ConsultationServiceID")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Country")
                         .HasColumnType("nvarchar(max)");
@@ -415,14 +474,14 @@ namespace Data.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PhysioSessionID")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Ratings")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Speciality")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("State")
                         .HasColumnType("nvarchar(max)");
@@ -563,6 +622,28 @@ namespace Data.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
+            modelBuilder.Entity("Entities.Consultation.ConsultationService", b =>
+                {
+                    b.HasOne("Entities.Users.Physiotherapist", "Physiotherapist")
+                        .WithMany("ConsultationServices")
+                        .HasForeignKey("PhysiotherapistID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Physiotherapist");
+                });
+
+            modelBuilder.Entity("Entities.Consultation.PhysioSession", b =>
+                {
+                    b.HasOne("Entities.Users.Physiotherapist", "Physiotherapist")
+                        .WithMany("PhysioSessions")
+                        .HasForeignKey("PhysiotherapistID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Physiotherapist");
+                });
+
             modelBuilder.Entity("Entities.Documents.VerificationDocument", b =>
                 {
                     b.HasOne("Entities.Users.Physiotherapist", null)
@@ -570,6 +651,33 @@ namespace Data.Migrations
                         .HasForeignKey("PhysiotherapistID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Entities.ExercisePrescription", b =>
+                {
+                    b.HasOne("Entities.Exercise", "Exercise")
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Entities.Users.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Entities.Users.Physiotherapist", "Physiotherapist")
+                        .WithMany()
+                        .HasForeignKey("PhysiotherapistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exercise");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Physiotherapist");
                 });
 
             modelBuilder.Entity("Entities.FeedbackReply", b =>
@@ -639,6 +747,10 @@ namespace Data.Migrations
 
             modelBuilder.Entity("Entities.Users.Physiotherapist", b =>
                 {
+                    b.Navigation("ConsultationServices");
+
+                    b.Navigation("PhysioSessions");
+
                     b.Navigation("VerificationDocuments");
                 });
 #pragma warning restore 612, 618
