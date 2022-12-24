@@ -6,6 +6,7 @@ using Entities.Users;
 using Infrastructures.EmailServices;
 using Infrastructures.NotificationService;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Services.Interfaces;
@@ -16,6 +17,7 @@ using System.Threading.Tasks;
 
 namespace enforcerWeb.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class ConnectionController:ControllerBase
@@ -31,18 +33,19 @@ namespace enforcerWeb.Controllers
             _userService = userService;
         }
 
+        [Authorize(Policy = "Patient")]
         [HttpPost("sendconnection")]
         public async Task<IActionResult> ConnectToATherapist(ConnectionRequestDTO request)
         {
             var result = await _userService.PatientConnectRequest(request);
-            request.ConnectionStatus = ConnectionStatus.sent;
             if (result.Status)
             {
                 //send notification
+                var connectionMessage = NotificationHelper.GetNotificationMessage(request).Split('|');
                 await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersManyMessages(new List<NotificationRequester>()
                 {
-                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(request).Split('|')[0], OwnerID = request.PatientID},
-                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(request).Split('|')[1], OwnerID = request.PhysiotherapistID}
+                    new NotificationRequester{ Message = connectionMessage[0], OwnerID = request.PatientID},
+                    new NotificationRequester{ Message = connectionMessage[1], OwnerID = request.PhysiotherapistID}
                 } ));
                 var query = await _userService.GetAPhysioTherapist(request.PhysiotherapistID);
                 var physio = JsonConvert.DeserializeObject<PhysioTherapistConnectDTO>(JsonConvert.SerializeObject(query.ReturnObj));
@@ -59,7 +62,7 @@ namespace enforcerWeb.Controllers
                      },
                     EmailDisplayName = "Health Enforcer",
                     Subject = $"Connection Notification from {request.PatientName}",
-                    Message = NotificationHelper.GetNotificationMessage(request).Split('|')[1]
+                    Message = connectionMessage[1]
                 });
             }
             return Ok(result);
@@ -82,10 +85,11 @@ namespace enforcerWeb.Controllers
 
                 if (updatePatientTherapist.ConnectionStatus == ConnectionStatus.disconnected)
                 {
+                    var connectionMsg = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|');
                     await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersManyMessages(new List<NotificationRequester>()
                 {
-                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|')[0], OwnerID = request.PatientID},
-                    new NotificationRequester{ Message = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|')[1], OwnerID = request.PhysiotherapistID}
+                    new NotificationRequester{ Message = connectionMsg[0], OwnerID = request.PatientID},
+                    new NotificationRequester{ Message = connectionMsg[1], OwnerID = request.PhysiotherapistID}
                 }));
                 }
 
