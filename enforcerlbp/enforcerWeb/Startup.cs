@@ -3,6 +3,7 @@ using Data;
 using Data.Context;
 using DataAccess.UnitOfWork;
 using enforcerWeb.Helper;
+using Infrastructures.EmailServices;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -43,7 +44,8 @@ namespace enforcerWeb
         {
             services.AddControllers();
 
-            services.AddMediatR(typeof(Startup));
+            services.AddMediatR(typeof(EmailSenderHandler));
+            //services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 
             services.AddDbContext<EnforcerContext>(options =>
                options.UseSqlServer(
@@ -121,7 +123,34 @@ namespace enforcerWeb
                     Title = "Enforcer API",
                     Version = "v1",
                 });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.
+                      \r\n\r\nExample: 'Bearer 12345abcdef'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
 
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+
+                        },
+                        new List<string>()
+                    }
+                });
                 //XML Documentation
                 //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
