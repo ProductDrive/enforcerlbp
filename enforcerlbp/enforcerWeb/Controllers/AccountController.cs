@@ -110,12 +110,6 @@ namespace enforcerWeb.Controllers
 
         private async Task<(EnforcerUser User, ResponseModel ReturnModel)> CreateAppUser(AppUserDTO model, string roleName)
         {
-            var userExists = await _userManager.FindByNameAsync(model.Email);
-
-            if (userExists != null)
-            {
-                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "User already exists!" } });
-            }
             if (string.IsNullOrWhiteSpace(model.Email))
             {
                 return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Email is required!" } });
@@ -124,6 +118,14 @@ namespace enforcerWeb.Controllers
             {
                 return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Password is required!" } });
             }
+
+            var userExists = await _userManager.FindByNameAsync(model.Email);
+
+            if (userExists != null)
+            {
+                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "User already exists!" } });
+            }
+            
 
             if (userExists == null)
             {
@@ -226,22 +228,20 @@ namespace enforcerWeb.Controllers
         [HttpPost("SignIn")]
         public async Task<IActionResult> Login(LoginDTO model)
         {
-            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@elo.com" : "";
+            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@productdrive.com" : "";
             if (string.IsNullOrWhiteSpace(emailToUse))
             {
                 return BadRequest("All fields are required");
             }
-
+            model.Email = emailToUse;
             return Ok(await LogUserIn(model));
 
         }
 
         private async Task<ResponseModel> LogUserIn(LoginDTO model)
         {
-            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.Phone) ? $"{model.Phone}@elo.com" : "";
-
             //get the user
-            var user = await _userManager.FindByEmailAsync(emailToUse);
+            var user = await _userManager.FindByEmailAsync(model.Email);
 
             if (user == null)
             {
@@ -290,23 +290,18 @@ namespace enforcerWeb.Controllers
                     new ContactsModel
                     {
                         Email = "afeexclusive@gmail.com",
-                        Name = "Ayokunle"
                     },
                     new ContactsModel
                     {
-                        Email = "adeoyetemitayo99@gmail.com",
-                        Name = "Tayo"
+                        Email = email,
                     }
                 },
                     EmailDisplayName = "Health Enforcer",
-                    Message = Token.otp,
-                    Subject = "Password Reset OTP",
-                    Category = "",
-
-
+                    Message = $"You attempted to reset your password on Health Enforcer app. \n Here is your OTP: <b>{Token.otp}</b> which will expire soon. {Environment.NewLine} If this token expires kindly request another one by using the forgot password feature on the app again. {Environment.NewLine} If this action is not initiated by you, kindly contact Health Enforcer Admin @ henforce@gamil.com. {Environment.NewLine} Thanks",
+                    Subject = "Password Reset OTP"
                 }) ;
 
-                return Ok(new ResponseModel { Response = "One Time Password sent successfully", Status = true });
+                return Ok(new ResponseModel { Response = "One Time Password sent successfully", Status = true, ReturnObj = Token.hash});
             }
             catch (Exception ex)
             {
