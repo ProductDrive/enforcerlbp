@@ -22,9 +22,15 @@ namespace Infrastructures.NotificationService
         }
         public async Task<bool> Handle(NotificationSenderCommand request, CancellationToken cancellationToken)
         {
+            var notifications = new List<Notification>();
+            foreach (var item in request.SenderCommands)
+            {
+                notifications.Add(_mapper.Map<Notification>(item));
+            }
+            
             try
             {
-                var notifications = _mapper.Map<List<Notification>>(request.SenderCommands);
+                
                 await _unitOfWorkNotification.Repository.CreateMany(notifications);
 
                 if (await _unitOfWorkNotification.Save() > 0)
@@ -33,7 +39,7 @@ namespace Infrastructures.NotificationService
                 }
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return false;
             }

@@ -3,6 +3,8 @@ using Data;
 using Data.Context;
 using DataAccess.UnitOfWork;
 using enforcerWeb.Helper;
+using Infrastructures.EmailServices;
+using Infrastructures.NotificationService;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -43,7 +45,9 @@ namespace enforcerWeb
         {
             services.AddControllers();
 
-            services.AddMediatR(typeof(Startup));
+            services.AddMediatR(typeof(EmailSenderHandler));
+            services.AddMediatR(typeof(NotificationSenderHandler));
+            //services.AddMediatR(typeof(Startup).GetTypeInfo().Assembly);
 
             services.AddDbContext<EnforcerContext>(options =>
                options.UseSqlServer(
@@ -104,7 +108,7 @@ namespace enforcerWeb
 
                 options.AddPolicy("RequireLoggedIn",
                     policy => policy.RequireAuthenticatedUser());
-                options.AddPolicy("SuperUser", policy=>policy.RequireRole( "Owner","Developer").RequireAuthenticatedUser());
+                options.AddPolicy("SuperUser", policy=>policy.RequireRole( "Owner", "Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Admin", policy=>policy.RequireRole("Admin", "Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Therapist", policy=>policy.RequireRole("Admin","Physiotherapist","Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Patient", policy=>policy.RequireRole("Admin","Patient","Developer").RequireAuthenticatedUser());
@@ -121,7 +125,33 @@ namespace enforcerWeb
                     Title = "Enforcer API",
                     Version = "v1",
                 });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = @"JWT Authorization header using the Bearer scheme: 'Bearer 12345abcdef'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
 
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header,
+
+                        },
+                        new List<string>()
+                    }
+                });
                 //XML Documentation
                 //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -140,6 +170,8 @@ namespace enforcerWeb
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication(); //How is this missing here until now
 
             app.UseAuthorization();
 

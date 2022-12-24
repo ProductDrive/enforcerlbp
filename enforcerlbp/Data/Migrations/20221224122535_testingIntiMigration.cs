@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Data.Migrations
 {
-    public partial class initialMigration : Migration
+    public partial class testingIntiMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -47,18 +47,53 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ConsultationServices",
+                name: "Exercises",
                 columns: table => new
                 {
                     ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhysiotherapistID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AmountByTime = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FileUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsSuggested = table.Column<bool>(type: "bit", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ConsultationServices", x => x.ID);
+                    table.PrimaryKey("PK_Exercises", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Feedbacks",
+                columns: table => new
+                {
+                    ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FeedbackMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SenderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PainResponse = table.Column<int>(type: "int", nullable: false),
+                    OtherComplaint = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Feedbacks", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -87,18 +122,17 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PhysioSessions",
+                name: "PatientTherapists",
                 columns: table => new
                 {
                     ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PhysiotherapistID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    AmountBySession = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                    ConnectionStatus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PhysioSessions", x => x.ID);
+                    table.PrimaryKey("PK_PatientTherapists", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -120,9 +154,8 @@ namespace Data.Migrations
                     Experience = table.Column<int>(type: "int", nullable: false),
                     Ratings = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     About = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Speciality = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Gender = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ConsultationServiceID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PhysioSessionID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsVerified = table.Column<bool>(type: "bit", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DateLastModified = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -253,6 +286,114 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FeedbackReplies",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderId = table.Column<int>(type: "int", nullable: false),
+                    FeedbackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Feedback = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FeedbackReplies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FeedbackReplies_Feedbacks_FeedbackId",
+                        column: x => x.FeedbackId,
+                        principalTable: "Feedbacks",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ConsultationServices",
+                columns: table => new
+                {
+                    ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhysiotherapistID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AmountByTime = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ConsultationServices", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_ConsultationServices_Physiotherapists_PhysiotherapistID",
+                        column: x => x.PhysiotherapistID,
+                        principalTable: "Physiotherapists",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExercisePrescriptions",
+                columns: table => new
+                {
+                    ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExerciseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PhysiotherapistId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    Repetitions = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Set = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Hold = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Time = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExerciseSummary = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SubmittedVideoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DateModified = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExercisePrescriptions", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_ExercisePrescriptions_Exercises_ExerciseId",
+                        column: x => x.ExerciseId,
+                        principalTable: "Exercises",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExercisePrescriptions_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ExercisePrescriptions_Physiotherapists_PhysiotherapistId",
+                        column: x => x.PhysiotherapistId,
+                        principalTable: "Physiotherapists",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PhysioSessions",
+                columns: table => new
+                {
+                    ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PhysiotherapistID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AmountBySession = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PhysioSessions", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_PhysioSessions_Physiotherapists_PhysiotherapistID",
+                        column: x => x.PhysiotherapistID,
+                        principalTable: "Physiotherapists",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "VerificationDocuments",
                 columns: table => new
                 {
@@ -312,6 +453,36 @@ namespace Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ConsultationServices_PhysiotherapistID",
+                table: "ConsultationServices",
+                column: "PhysiotherapistID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExercisePrescriptions_ExerciseId",
+                table: "ExercisePrescriptions",
+                column: "ExerciseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExercisePrescriptions_PatientId",
+                table: "ExercisePrescriptions",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExercisePrescriptions_PhysiotherapistId",
+                table: "ExercisePrescriptions",
+                column: "PhysiotherapistId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FeedbackReplies_FeedbackId",
+                table: "FeedbackReplies",
+                column: "FeedbackId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PhysioSessions_PhysiotherapistID",
+                table: "PhysioSessions",
+                column: "PhysiotherapistID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_VerificationDocuments_PhysiotherapistID",
                 table: "VerificationDocuments",
                 column: "PhysiotherapistID");
@@ -338,7 +509,16 @@ namespace Data.Migrations
                 name: "ConsultationServices");
 
             migrationBuilder.DropTable(
-                name: "Patients");
+                name: "ExercisePrescriptions");
+
+            migrationBuilder.DropTable(
+                name: "FeedbackReplies");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
+
+            migrationBuilder.DropTable(
+                name: "PatientTherapists");
 
             migrationBuilder.DropTable(
                 name: "PhysioSessions");
@@ -354,6 +534,15 @@ namespace Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Exercises");
+
+            migrationBuilder.DropTable(
+                name: "Patients");
+
+            migrationBuilder.DropTable(
+                name: "Feedbacks");
 
             migrationBuilder.DropTable(
                 name: "Physiotherapists");
