@@ -24,6 +24,8 @@ namespace enforcerWeb.Helper
             CreateMap<NotificationCommand, Notification>();
             CreateMap<ExercisePrescription, ExercisePrescriptionDTO>();
             CreateMap<ExercisePrescriptionDTO, ExercisePrescription>();
+            CreateMap<ExerciseDTO, Exercise>();
+            CreateMap<Exercise, ExerciseDTO>();
         }
     }
 }

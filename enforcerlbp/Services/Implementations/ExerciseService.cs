@@ -44,11 +44,12 @@ namespace Services.Implementations
         public async Task<ResponseModel> GetExercise(Guid Id)
         {
             var exercise = await _unitOfWorkExercise.Repository.GetByID(Id);
-            return new ResponseModel { Status = true, ReturnObj = exercise };
+            return new ResponseModel { Status = true, Response= "Successful", ReturnObj = exercise };
         }
-        public async Task<ResponseModel> CreateExercise(Exercise model)
+        public async Task<ResponseModel> CreateExercise(ExerciseDTO model)
         {
-            await _unitOfWorkExercise.Repository.Create(model);
+            var exe = _mapper.Map<Exercise>(model);
+            await _unitOfWorkExercise.Repository.Create(exe);
             await _unitOfWorkExercise.Save();
             return new ResponseModel { Status = true, Response = "Exercise created successfully" };
         }
@@ -63,7 +64,7 @@ namespace Services.Implementations
 
         #endregion
 
-        #region ExercisePrescription
+        #region Exercise Prescription
 
         public ResponseModel SuggestedExercise(Guid physiotherapistId)
         {
@@ -125,9 +126,11 @@ namespace Services.Implementations
             }
 
             if (request.StartDate == default) request.StartDate = DateTime.Now;
-            if (request.StartDate == default) request.EndDate = DateTime.Now.AddDays(5);
+            if (request.EndDate == default) request.EndDate = DateTime.Now.AddDays(5);
 
             var prescription = _mapper.Map<ExercisePrescription>(request);
+            prescription.DateCreated = DateTime.Now;
+
             try
             {
                 await _unitOfWorkExercisePrescription.Repository.Create(prescription);
@@ -160,9 +163,36 @@ namespace Services.Implementations
                 .Include(x=>x.Exercise)
                 .FirstOrDefault(x=>x.ID == completeExercise.ExercisePrescriptionId);
 
+           // var result = new ResponseModel();
+           if(completeExercise.Video.Length < 1 && completeExercise.IsLiveMonitored == false) return new ResponseModel { Status = false, Response = "Video is empty" };
+
+          
             if (execPrescribed == null) return new ResponseModel { Status = false, Response = "Invalid Execise Id or No assigned exercise with the Id" };
 
-            if (completeExercise.Video.FileName.Length < 1) return new ResponseModel { Status = false, Response = "Video is empty" };
+            if (completeExercise.IsLiveMonitored)
+            {
+                execPrescribed.IsCompleted = true;
+                execPrescribed.DateModified = DateTime.Now;
+            }
+
+            if (completeExercise.Video.Length > 1)
+            {
+                var response = await UploadFileForExercise(completeExercise);
+                execPrescribed.SubmittedVideoUrl = response.Response;
+                execPrescribed.IsCompleted = true;
+                execPrescribed.DateModified = DateTime.Now;
+            }
+            
+            _unitOfWorkExercisePrescription.Repository.Update(execPrescribed);
+            await _unitOfWorkExercisePrescription.Save();
+
+            return new ResponseModel { Status = true, Response = "Exercise response saved successfully. Physiotherapist will have a look at it and revert.", ReturnObj = execPrescribed };
+            //TODO: send notification in controller
+
+        }
+
+        private async Task<ResponseModel> UploadFileForExercise(ExerciseCompleteDTO completeExercise)
+        {
             string[] allowedExtensions = { ".mp4", ".wav", ".3pg", ".mov", ".webm", "flv", ".wmv", ".avi" };
             string videoExtension = Path.GetExtension(completeExercise.Video.FileName);
 
@@ -172,18 +202,7 @@ namespace Services.Implementations
                 return new ResponseModel { Status = false, Response = "File select is not a supported video format. Supported formats: .mp4, .wav, .3pg, .mov, .webm, .flv, .wmv, .avi" };
             }
             var returnedVedioUrl = await _firebaseService.FirebaseFileUpload(completeExercise.Video, "CompletedExercises");
-            execPrescribed.SubmittedVideoUrl = returnedVedioUrl;
-            execPrescribed.IsCompleted = true;
-            execPrescribed.DateModified = DateTime.Now;
-
-            _unitOfWorkExercisePrescription.Repository.Update(execPrescribed);
-            await _unitOfWorkExercisePrescription.Save();
-
-            
-
-            return new ResponseModel { Status = true, Response = "Exercise response saved successfully. Physiotherapist will have a look at it and revert.", ReturnObj = execPrescribed };
-            //TODO: send notification in controller
-
+            return new ResponseModel {Status = true, Response = returnedVedioUrl };
         }
 
         public async Task<List<ExercisePrescription>> CheckDefaulters()
@@ -207,10 +226,17 @@ namespace Services.Implementations
             return await allPrescription.ToListAsync();
         }
 
-    
+
 
         #endregion
 
+
+        #region Exercise Feedback and Replies
+        //create feedback
+
+        //add reply to feedback
+        // get feedback - attach its replies in hirachical order
+        #endregion
     }
 }    
 
