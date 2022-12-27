@@ -20,14 +20,11 @@ namespace DTOs.RequestObject
         public string Hold { get; set; }
         public string Time { get; set; }
         public string Description { get; set; }
-        public string ExerciseSummary { get; set; }
+        public string ExerciseSummary => $"{ExerciseName},-{Repetitions} repetitions, -{Time}, to be completed {EndDate.ToString("d")}";
         public string SubmittedVideoUrl { get; set; }
         public DateTime DateCreated { get; set; }
         public DateTime DateModified { get; set; }
 
-        public ExercisePrescriptionDTO()
-        {
-            ExerciseSummary = $"{ExerciseName}-{Repetitions}-{Time} to be completed {EndDate.ToString("d")}";
-        }
+       
     }
 }

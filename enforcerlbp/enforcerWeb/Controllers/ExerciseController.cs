@@ -27,9 +27,19 @@ namespace enforcerWeb.Controllers
             _mediatR = mediatR;
         }
 
+        [HttpPost]
+        public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
+
+        [HttpGet]
+        public async Task<ResponseModel> GetOneExercise(Guid Id) => await _exerciseService.GetExercise(Id);
+
+        [HttpGet("categorized")]
+        public async Task<ResponseModel> GetExerciseByCategories() => await _exerciseService.ExerciseCategory();
+
         [HttpPost("completed")]
-        public async Task<IActionResult> ExerciseCompletion(ExerciseCompleteDTO exerComplete)
+        public async Task<IActionResult> ExerciseCompletion([FromForm]ExerciseCompleteDTO exerComplete)
         {
+
             var result = await _exerciseService.CompleteExercise(exerComplete);
             var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
 
@@ -56,6 +66,37 @@ namespace enforcerWeb.Controllers
             return Ok(result);
         }
 
+        [HttpPost("completedlive")]
+        public async Task<IActionResult> LiveExerciseCompletion(ExerciseCompleteDTO exerComplete)
+        {
+
+            var result = await _exerciseService.CompleteExercise(exerComplete);
+            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
+
+            // Send notification to physiotherapist
+            var ownerIds = new List<Guid>() { execPrescribed.PhysiotherapistId };
+            string gender = execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her";
+            string message = $"{execPrescribed.Patient.FirstName} completed {gender} exercise";
+            await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
+            //send email
+            await _mediatR.Send(new EmailSenderCommand
+            {
+                Contacts = new List<ContactsModel>
+                     {
+                         new ContactsModel
+                         {
+                              Email = execPrescribed.Physiotherapist.Email,
+                              Name = execPrescribed.Physiotherapist.FirstName
+                         }
+                     },
+                EmailDisplayName = "Health Enforcer",
+                Subject = $"Exercise Completion",
+                Message = message
+            });
+            return Ok(result);
+        }
+
+
         [HttpGet("myexercises")]
         public IActionResult GetMyExercises(Guid ownerId, bool isPatient) => Ok(_exerciseService.GetMyPrescription (ownerId, isPatient));
 
@@ -71,7 +112,7 @@ namespace enforcerWeb.Controllers
 
             //send notification patient
             var ownerIds = new List<Guid>() { eP.PatientId };
-            string message = $"An exercise has be prescribed for you. Kindly check your list of exercise prescriptions";
+            string message = $"An exercise has been prescribed for you. Kindly check your list of exercise prescriptions";
             await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
             //send email
             await _mediatR.Send(new EmailSenderCommand
