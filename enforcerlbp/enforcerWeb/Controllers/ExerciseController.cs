@@ -71,11 +71,11 @@ namespace enforcerWeb.Controllers
         {
 
             var result = await _exerciseService.CompleteExercise(exerComplete);
-            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
+            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result.ReturnObj));
 
             // Send notification to physiotherapist
             var ownerIds = new List<Guid>() { execPrescribed.PhysiotherapistId };
-            string gender = execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her";
+            string gender = !string.IsNullOrWhiteSpace(execPrescribed.Patient.Gender)? execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her":"their";
             string message = $"{execPrescribed.Patient.FirstName} completed {gender} exercise";
             await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
             //send email
@@ -93,6 +93,7 @@ namespace enforcerWeb.Controllers
                 Subject = $"Exercise Completion",
                 Message = message
             });
+            result.ReturnObj = null;
             return Ok(result);
         }
 
@@ -131,6 +132,27 @@ namespace enforcerWeb.Controllers
             });
             return Ok(result);
         }
+
+        //FEEDBACK ENDPOINTS
+        [HttpPost("addfeedback")]
+        public async Task<ResponseModel> ExerciseFeedback(FeedbackRequestDTO model) => await _exerciseService.AddFeedBackToExercise(model);
+
+        [HttpPost("feedbackreply")]
+        public async Task<ResponseModel> AddAReply(FeedbackReplyDTO model)
+        {
+            var response = await _exerciseService.AddAFeedBackReply(model);
+            var ownerId = new List<Guid>() { model.OwnerId };
+            string message = $"There is a reply to your feedback on {model.ExerciseName}.";
+            await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerId, message));
+            return response;
+        }
+
+        [HttpGet("feedbacklist")]
+        public ResponseModel GetFeedbacks(Guid patientId) => _exerciseService.GetFeedBacks(patientId);
+
+        [HttpGet("feedback")]
+        public ResponseModel GetOneFeedback(Guid Id) => _exerciseService.GetFeedback(Id);
+        //send notification for feedback replies
     }
 }
 
