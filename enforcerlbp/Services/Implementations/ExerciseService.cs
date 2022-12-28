@@ -21,6 +21,8 @@ namespace Services.Implementations
         private readonly IUnitOfWork<Patient> _unitOfWorkPatient;
         private readonly IUnitOfWork<Exercise> _unitOfWorkExercise;
         private readonly IUnitOfWork<ExercisePrescription> _unitOfWorkExercisePrescription;
+        private readonly IUnitOfWork<Feedback> _unitOfWorkFeedback;
+        private readonly IUnitOfWork<FeedbackReply> _unitOfWorkReplies;
         private readonly IFirebase _firebaseService;
         private readonly IMapper _mapper;
 
@@ -29,6 +31,8 @@ namespace Services.Implementations
             IUnitOfWork<Patient> unitOfWorkPatient,
             IUnitOfWork<Exercise> unitOfWorkExercise,
             IUnitOfWork<ExercisePrescription> unitOfWorkExercisePrescription,
+            IUnitOfWork<Feedback> unitOfWorkFeedback,
+            IUnitOfWork<FeedbackReply> unitOfWorkReplies,
             IFirebase firebaseService,
             IMapper mapper
             )
@@ -37,6 +41,8 @@ namespace Services.Implementations
             _unitOfWorkPatient = unitOfWorkPatient;
             _unitOfWorkExercise = unitOfWorkExercise;
             _unitOfWorkExercisePrescription = unitOfWorkExercisePrescription;
+            _unitOfWorkFeedback = unitOfWorkFeedback;
+            _unitOfWorkReplies = unitOfWorkReplies;
             _firebaseService = firebaseService;
             _mapper = mapper;
         }
@@ -164,7 +170,7 @@ namespace Services.Implementations
                 .FirstOrDefault(x=>x.ID == completeExercise.ExercisePrescriptionId);
 
            // var result = new ResponseModel();
-           if(completeExercise.Video.Length < 1 && completeExercise.IsLiveMonitored == false) return new ResponseModel { Status = false, Response = "Video is empty" };
+           if(completeExercise.Video != null &&  completeExercise.Video.Length < 1 && completeExercise.IsLiveMonitored == false) return new ResponseModel { Status = false, Response = "Video is empty" };
 
           
             if (execPrescribed == null) return new ResponseModel { Status = false, Response = "Invalid Execise Id or No assigned exercise with the Id" };
@@ -175,7 +181,7 @@ namespace Services.Implementations
                 execPrescribed.DateModified = DateTime.Now;
             }
 
-            if (completeExercise.Video.Length > 1)
+            if (completeExercise.Video != null &&  completeExercise.Video.Length > 1)
             {
                 var response = await UploadFileForExercise(completeExercise);
                 execPrescribed.SubmittedVideoUrl = response.Response;
@@ -233,9 +239,75 @@ namespace Services.Implementations
 
         #region Exercise Feedback and Replies
         //create feedback
+        public async Task<ResponseModel> AddFeedBackToExercise(FeedbackRequestDTO feedback)
+        {
+            try
+            {
+                var fb = _mapper.Map<Feedback>(feedback);
+                fb.DateCreated = DateTime.Now;
+                await _unitOfWorkFeedback.Repository.Create(fb);
+                await _unitOfWorkFeedback.Save();
+                return new ResponseModel { Status = true, Response = "Successful" };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = ex.Message??ex.InnerException.Message };
+            }
+        }
+        
+        //add reply to feedback - send notification
+        public async Task<ResponseModel> AddAFeedBackReply(FeedbackReplyDTO reply) 
+        {
+            try
+            {
+                var fbr = _mapper.Map<FeedbackReply>(reply);
+                var query = _unitOfWorkReplies.Repository.GetAllQuery().Where(x => x.FeedbackId == reply.FeedbackId);
+                fbr.OrderId = query.Count() > 0 ? query.Count() + 1 : 1;
+                await _unitOfWorkReplies.Repository.Create(fbr);
+                await _unitOfWorkReplies.Save();
+                return new ResponseModel { Status = true, Response = "Successful", ReturnObj = reply};
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = ex.Message ?? ex.InnerException.Message };
+            }
+        }
 
-        //add reply to feedback
+        // get a list of feedback
+        public ResponseModel GetFeedBacks(Guid patienId)
+        {
+           var feedbackss = _unitOfWorkFeedback.Repository.GetAllQuery().Where(x => x.PatientId == patienId);
+            if (feedbackss.Any())
+            {
+                var feedbackResult = new List<FeedbackResponseDTO>();
+                foreach (var item in feedbackss)
+                {
+                    feedbackResult.Add(_mapper.Map<FeedbackResponseDTO>(item));
+                }
+                return new ResponseModel { Status = true, Response = "Successful", ReturnObj = feedbackResult };
+            }
+            else
+            {
+                return new ResponseModel { Status = false, Response = "This patient has not completed any feedback yet"};
+            }
+
+        }
         // get feedback - attach its replies in hirachical order
+        public ResponseModel GetFeedback(Guid Id)
+        {
+           var query = _unitOfWorkFeedback.Repository.GetAllQuery().Include(r=>r.FeedbackReplies).FirstOrDefault(x => x.ID == Id);
+            if (query != null)
+            {
+                if (query.FeedbackReplies != null)
+                {
+                    query.FeedbackReplies.OrderByDescending(r => r.OrderId);
+                    var res = _mapper.Map<FeedbackResponseDTO>(query);
+                    return new ResponseModel { Status = true, Response = "Successful", ReturnObj = res };
+                }
+                return new ResponseModel { Status = true, Response = "Successful", ReturnObj = query };
+            }
+            return new ResponseModel { Status = false, Response = "Failed"};
+        }
         #endregion
     }
 }    

@@ -10,6 +10,8 @@ namespace Services.Interfaces
 {
     public interface IExerciseService
     {
+        Task<ResponseModel> AddAFeedBackReply(FeedbackReplyDTO reply);
+        Task<ResponseModel> AddFeedBackToExercise(FeedbackRequestDTO feedback);
         Task<List<ExercisePrescription>> CheckDefaulters();
         Task<ResponseModel> CompleteExercise(ExerciseCompleteDTO completeExercise);
         Task<ResponseModel> CreateAnExercisePrescription(ExercisePrescriptionDTO request);
@@ -17,6 +19,8 @@ namespace Services.Interfaces
         Task<ResponseModel> ExerciseCategory();
         Task<ResponseModel> GetAPrescription(Guid Id);
         Task<ResponseModel> GetExercise(Guid Id);
+        ResponseModel GetFeedback(Guid Id);
+        ResponseModel GetFeedBacks(Guid patienId);
         ResponseModel GetMyPrescription(Guid ownerId, bool isPatient);
         ResponseModel SuggestedExercise(Guid physiotherapistId);
     }

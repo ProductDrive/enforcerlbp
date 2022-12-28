@@ -354,6 +354,8 @@ namespace enforcerWeb.Controllers
             }
             return new ResponseModel { Status = false, Response = "something went wrong" }; ;
         }
+
+        //TODO: write verification endpoint here
     }
     
 }

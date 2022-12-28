@@ -26,6 +26,12 @@ namespace enforcerWeb.Helper
             CreateMap<ExercisePrescriptionDTO, ExercisePrescription>();
             CreateMap<ExerciseDTO, Exercise>();
             CreateMap<Exercise, ExerciseDTO>();
+            CreateMap<Feedback, FeedbackRequestDTO>();
+            CreateMap<FeedbackRequestDTO, Feedback>();
+            CreateMap<FeedbackResponseDTO, Feedback>();
+            CreateMap<Feedback, FeedbackResponseDTO>();
+            CreateMap<FeedbackReply, FeedbackReplyDTO>();
+            CreateMap<FeedbackReplyDTO, FeedbackReply>();
         }
     }
 }
