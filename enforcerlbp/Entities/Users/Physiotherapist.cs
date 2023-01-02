@@ -22,7 +22,8 @@ namespace Entities.Users
         public string DOB { get; set; }
         public int Age { get; set; }
         public int Experience { get; set; }
-        public decimal Ratings { get; set; }
+        public double Ratings { get; set; }
+        public string RatingData { get; set; }
         public string About { get; set; }
         public string Speciality { get; set; }
         public string Gender { get; set; }

@@ -116,7 +116,6 @@ namespace Services.Implementations
             physioToUpdate.DateLastModified = DateTime.UtcNow;
             physioToUpdate.Age = therapist.Age == 0 ? physioToUpdate.Age : therapist.Age;
             physioToUpdate.IsVerified = therapist.IsVerified == false ? physioToUpdate.IsVerified : therapist.IsVerified;
-            physioToUpdate.Ratings = therapist.Ratings == 0 ? physioToUpdate.Ratings : therapist.Ratings;
             physioToUpdate.DOB = therapist.DOB;
             physioToUpdate.Addressline = string.IsNullOrWhiteSpace(therapist.Addressline) ? physioToUpdate.Addressline : therapist.Addressline;
             physioToUpdate.PhoneNumber = string.IsNullOrWhiteSpace(therapist.PhoneNumber) ? physioToUpdate.PhoneNumber : therapist.PhoneNumber;
@@ -167,6 +166,30 @@ namespace Services.Implementations
 
 
         }
+
+        public async Task<ResponseModel> RatePhysiotherapist(Guid therapistId, int value)
+        {
+            //search physio
+            var therapist = await _unitOfWorkPhysio.Repository.GetByID(therapistId);
+
+            //add current to rating data
+            therapist.RatingData = string.IsNullOrWhiteSpace(therapist.RatingData) ? $"{value}":therapist.RatingData+$",{value}";
+            //calculate average from rating data
+            var ratingData = therapist.RatingData.Split(',');
+            var averageRating = Math.Round(Array.ConvertAll(ratingData, delegate (string s) { return Convert.ToInt32(s); }).Average(), 1);
+            therapist.Ratings = averageRating;
+            try
+            {
+                _unitOfWorkPhysio.Repository.Update(therapist);
+                await _unitOfWorkPhysio.Save();
+                return new ResponseModel { Status = true, Response="Successful"};
+            }
+            catch (Exception)
+            {
+                return new ResponseModel { Status = false, Response = "Failed"};
+            }
+        }
+
 
         #region PatientPhysiotherapist Connection
         public ResponseModel GetPhysiotherapists(string searchText)

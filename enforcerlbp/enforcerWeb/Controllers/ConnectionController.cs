@@ -33,6 +33,9 @@ namespace enforcerWeb.Controllers
             _userService = userService;
         }
 
+        [HttpGet]
+        public ResponseModel GetPhysiotherapist() => _userService.GetPhysiotherapists();
+
         [Authorize(Policy = "Patient")]
         [HttpPost("sendconnection")]
         public async Task<IActionResult> ConnectToATherapist(ConnectionRequestDTO request)
@@ -100,7 +103,8 @@ namespace enforcerWeb.Controllers
         [HttpGet("mythetapists")]
         public IActionResult GetMyPhysiotherapists(Guid patientId) => Ok(_userService.MyPhysiotherapists(patientId));
 
-
+        [HttpPost("rating")]
+        public async Task<ResponseModel> RateAPhysiotherapist(Guid therapistId, int value) => await _userService.RatePhysiotherapist(therapistId, value);
        
     }
 }
