@@ -12,8 +12,9 @@ namespace Services.Interfaces
     {
         Task<ResponseModel> CreatePatient(PatientDTO model);
         Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model);
+        Task<ResponseModel> GetAPatient(Guid Id);
         Task<ResponseModel> GetAPhysioTherapist(Guid Id);
-        ResponseModel GetPhysiotherapists(int pageNo = 20);
+        ResponseModel GetPhysiotherapists(int pageNo);
         ResponseModel GetPhysiotherapists(string searchText);
         ResponseModel MyPhysiotherapists(Guid patientId);
         Task<ResponseModel> PatientConnectRequest(ConnectionRequestDTO request);

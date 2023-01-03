@@ -33,8 +33,11 @@ namespace enforcerWeb.Controllers
             _userService = userService;
         }
 
-        [HttpGet]
-        public ResponseModel GetPhysiotherapist() => _userService.GetPhysiotherapists();
+        [HttpGet("therapists")]
+        public ResponseModel GetPhysiotherapist(int page = 20) => _userService.GetPhysiotherapists(page);
+
+        [HttpGet("therapistsearch")]
+        public ResponseModel GetPhysiotherapist(string txt) => _userService.GetPhysiotherapists(txt);
 
         [Authorize(Policy = "Patient")]
         [HttpPost("sendconnection")]
@@ -100,8 +103,8 @@ namespace enforcerWeb.Controllers
             return Ok(result);
         }
 
-        [HttpGet("mythetapists")]
-        public IActionResult GetMyPhysiotherapists(Guid patientId) => Ok(_userService.MyPhysiotherapists(patientId));
+        [HttpGet("mytherapists")]
+        public ResponseModel GetMyPhysiotherapists(Guid patientId) => _userService.MyPhysiotherapists(patientId);
 
         [HttpPost("rating")]
         public async Task<ResponseModel> RateAPhysiotherapist(Guid therapistId, int value) => await _userService.RatePhysiotherapist(therapistId, value);
