@@ -2,6 +2,7 @@
 using DataAccess.UnitOfWork;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using Entities.Consultation;
 using Entities.Documents;
 using Entities.Users;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +25,8 @@ namespace Services.Implementations
         private readonly IFirebase _firebase;
         private readonly IUnitOfWork<VerificationDocument> _unitOfWorkVerificationDocument;
         private readonly IUnitOfWork<PatientTherapist> _unitOfWorkPatientTherapist;
+        private readonly IUnitOfWork<ConsultationService> _unitOfWorkConsultation;
+        private readonly IUnitOfWork<PhysioSession> _unitOfWorkPhysioSessions;
 
         public UserService(
             IUnitOfWork<Physiotherapist> unitOfWorkPhysio,
@@ -31,7 +34,9 @@ namespace Services.Implementations
             IMapper mapper,
             IFirebase firebase,
             IUnitOfWork<VerificationDocument> unitOfWorkVerificationDocument,
-            IUnitOfWork<PatientTherapist> unitOfWorkPatientTherapist
+            IUnitOfWork<PatientTherapist> unitOfWorkPatientTherapist,
+            IUnitOfWork<ConsultationService> unitOfWorkConsultation,
+            IUnitOfWork<PhysioSession> unitOfWorkPhysioSessions
             )
         {
             _unitOfWorkPhysio = unitOfWorkPhysio;
@@ -40,6 +45,8 @@ namespace Services.Implementations
             _firebase = firebase;
             _unitOfWorkVerificationDocument = unitOfWorkVerificationDocument;
             _unitOfWorkPatientTherapist = unitOfWorkPatientTherapist;
+            _unitOfWorkConsultation = unitOfWorkConsultation;
+            _unitOfWorkPhysioSessions = unitOfWorkPhysioSessions;
         }
 
        
@@ -309,6 +316,44 @@ namespace Services.Implementations
 
         #endregion
 
+
+        #region PhysiotherapistServices
+        // Physiotherapist sessions
+        public async Task<ResponseModel> CreateASession(List<PhysioSessionDTO> sessions)
+        {
+            var physioSessions = new List<PhysioSession>();
+            foreach (var item in sessions)
+            {
+                physioSessions.Add(_mapper.Map<PhysioSession>(item));
+            }
+            try
+            {
+                await _unitOfWorkPhysioSessions.Repository.CreateMany(physioSessions);
+                await _unitOfWorkPhysioSessions.Save();
+                return new ResponseModel { Status = true, Response = "Successful" };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = ex.Message ?? ex.InnerException.Message };
+            }
+        }
+
+        public ResponseModel GetATherapistSessions(Guid therapistId)
+        {
+            var query = _unitOfWorkPhysioSessions.Repository.GetAllQuery().Where(s => s.PhysiotherapistID == therapistId);
+            if (query.Any())
+            {
+                List<PhysioSessionDTO> result = new List<PhysioSessionDTO>();
+                foreach (var item in query)
+                {
+                    result.Add(_mapper.Map<PhysioSessionDTO>(item));
+                }
+                return new ResponseModel { Status = true, Response = "Successful", ReturnObj = result };
+            }
+            return new ResponseModel { Status = false, Response = "No session sevice foun for this physiotherapist" };
+        }
+
+        #endregion
 
     }
 
