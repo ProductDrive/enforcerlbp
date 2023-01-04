@@ -16,7 +16,7 @@ namespace Services.Interfaces
         Task<ResponseModel> GetAPatient(Guid Id);
         Task<ResponseModel> GetAPhysioTherapist(Guid Id);
         ResponseModel GetATherapistSessions(Guid therapistId);
-        ResponseModel GetPhysiotherapists(int pageNo)
+        ResponseModel GetPhysiotherapists(int pageNo);
         ResponseModel GetPhysiotherapists(string searchText);
         ResponseModel MyPhysiotherapists(Guid patientId);
         Task<ResponseModel> PatientConnectRequest(ConnectionRequestDTO request);
