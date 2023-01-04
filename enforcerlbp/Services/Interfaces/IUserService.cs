@@ -10,9 +10,11 @@ namespace Services.Interfaces
 {
     public interface IUserService
     {
+        Task<ResponseModel> CreateASession(List<PhysioSessionDTO> sessions);
         Task<ResponseModel> CreatePatient(PatientDTO model);
         Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model);
         Task<ResponseModel> GetAPhysioTherapist(Guid Id);
+        ResponseModel GetATherapistSessions(Guid therapistId);
         ResponseModel GetPhysiotherapists(int pageNo = 20);
         ResponseModel GetPhysiotherapists(string searchText);
         ResponseModel MyPhysiotherapists(Guid patientId);

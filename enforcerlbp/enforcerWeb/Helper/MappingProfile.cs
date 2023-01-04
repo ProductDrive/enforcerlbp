@@ -2,6 +2,7 @@
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
 using Entities;
+using Entities.Consultation;
 using Entities.Users;
 using Infrastructures.NotificationService;
 using System.Collections.Generic;
@@ -32,6 +33,8 @@ namespace enforcerWeb.Helper
             CreateMap<Feedback, FeedbackResponseDTO>();
             CreateMap<FeedbackReply, FeedbackReplyDTO>();
             CreateMap<FeedbackReplyDTO, FeedbackReply>();
+            CreateMap<PhysioSessionDTO, PhysioSession>();
+            CreateMap<PhysioSession, PhysioSessionDTO>();
         }
     }
 }

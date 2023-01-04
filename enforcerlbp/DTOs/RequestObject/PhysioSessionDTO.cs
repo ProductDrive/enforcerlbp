@@ -1,18 +1,15 @@
-﻿using Entities.Users;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Entities.Consultation
+namespace DTOs.RequestObject
 {
-    public class PhysioSession
+    public class PhysioSessionDTO
     {
         public Guid ID { get; set; }
         public Guid PhysiotherapistID { get; set; }
-        public Physiotherapist Physiotherapist { get; set; }
         public string Name { get; set; }
         public decimal AmountBySession { get; set; }
         public bool IsAvailable { get; set; }
-
     }
 }
