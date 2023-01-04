@@ -27,9 +27,19 @@ namespace enforcerWeb.Controllers
             _mediatR = mediatR;
         }
 
+        [HttpPost]
+        public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
+
+        [HttpGet]
+        public async Task<ResponseModel> GetOneExercise(Guid Id) => await _exerciseService.GetExercise(Id);
+
+        [HttpGet("categorized")]
+        public async Task<ResponseModel> GetExerciseByCategories() => await _exerciseService.ExerciseCategory();
+
         [HttpPost("completed")]
-        public async Task<IActionResult> ExerciseCompletion(ExerciseCompleteDTO exerComplete)
+        public async Task<IActionResult> ExerciseCompletion([FromForm]ExerciseCompleteDTO exerComplete)
         {
+
             var result = await _exerciseService.CompleteExercise(exerComplete);
             var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
 
@@ -56,6 +66,38 @@ namespace enforcerWeb.Controllers
             return Ok(result);
         }
 
+        [HttpPost("completedlive")]
+        public async Task<IActionResult> LiveExerciseCompletion(ExerciseCompleteDTO exerComplete)
+        {
+
+            var result = await _exerciseService.CompleteExercise(exerComplete);
+            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result.ReturnObj));
+
+            // Send notification to physiotherapist
+            var ownerIds = new List<Guid>() { execPrescribed.PhysiotherapistId };
+            string gender = !string.IsNullOrWhiteSpace(execPrescribed.Patient.Gender)? execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her":"their";
+            string message = $"{execPrescribed.Patient.FirstName} completed {gender} exercise";
+            await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
+            //send email
+            await _mediatR.Send(new EmailSenderCommand
+            {
+                Contacts = new List<ContactsModel>
+                     {
+                         new ContactsModel
+                         {
+                              Email = execPrescribed.Physiotherapist.Email,
+                              Name = execPrescribed.Physiotherapist.FirstName
+                         }
+                     },
+                EmailDisplayName = "Health Enforcer",
+                Subject = $"Exercise Completion",
+                Message = message
+            });
+            result.ReturnObj = null;
+            return Ok(result);
+        }
+
+
         [HttpGet("myexercises")]
         public IActionResult GetMyExercises(Guid ownerId, bool isPatient) => Ok(_exerciseService.GetMyPrescription (ownerId, isPatient));
 
@@ -71,7 +113,7 @@ namespace enforcerWeb.Controllers
 
             //send notification patient
             var ownerIds = new List<Guid>() { eP.PatientId };
-            string message = $"An exercise has be prescribed for you. Kindly check your list of exercise prescriptions";
+            string message = $"An exercise has been prescribed for you. Kindly check your list of exercise prescriptions";
             await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
             //send email
             await _mediatR.Send(new EmailSenderCommand
@@ -90,6 +132,27 @@ namespace enforcerWeb.Controllers
             });
             return Ok(result);
         }
+
+        //FEEDBACK ENDPOINTS
+        [HttpPost("addfeedback")]
+        public async Task<ResponseModel> ExerciseFeedback(FeedbackRequestDTO model) => await _exerciseService.AddFeedBackToExercise(model);
+
+        [HttpPost("feedbackreply")]
+        public async Task<ResponseModel> AddAReply(FeedbackReplyDTO model)
+        {
+            var response = await _exerciseService.AddAFeedBackReply(model);
+            var ownerId = new List<Guid>() { model.OwnerId };
+            string message = $"There is a reply to your feedback on {model.ExerciseName}.";
+            await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerId, message));
+            return response;
+        }
+
+        [HttpGet("feedbacklist")]
+        public ResponseModel GetFeedbacks(Guid patientId) => _exerciseService.GetFeedBacks(patientId);
+
+        [HttpGet("feedback")]
+        public ResponseModel GetOneFeedback(Guid Id) => _exerciseService.GetFeedback(Id);
+        //send notification for feedback replies
     }
 }
 

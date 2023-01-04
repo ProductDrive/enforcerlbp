@@ -66,8 +66,10 @@ namespace enforcerWeb.Controllers
                 }
 
 
-                var physio = _mapper.Map<AppUserDTO, PhysiotherapistDTO>(model);
+                var physio = _mapper.Map<PhysiotherapistDTO>(model);
                 physio.IsVerified = false;
+                physio.ID = Guid.Parse(response.User.Id);
+                physio.DateCreated = DateTime.Now;
                 await _userService.CreatePhysiotherapist(physio);
 
                 //generate token
@@ -93,7 +95,9 @@ namespace enforcerWeb.Controllers
                 {
                     return StatusCode(500, response.ReturnModel);
                 }
-                var patient = _mapper.Map<AppUserDTO, PatientDTO>(model);
+                var patient = _mapper.Map<PatientDTO>(model);
+                patient.ID = Guid.Parse(response.User.Id);
+                patient.DateCreated = DateTime.Now;
                 await _userService.CreatePatient(patient);
 
 
@@ -110,20 +114,21 @@ namespace enforcerWeb.Controllers
 
         private async Task<(EnforcerUser User, ResponseModel ReturnModel)> CreateAppUser(AppUserDTO model, string roleName)
         {
-            if (string.IsNullOrWhiteSpace(model.Email))
+            var emailToUse = !string.IsNullOrWhiteSpace(model.Email) ? model.Email : !string.IsNullOrWhiteSpace(model.PhoneNumber) ? $"{model.PhoneNumber}@productdrive.com" : "";
+            if (string.IsNullOrWhiteSpace(emailToUse))
             {
-                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Email is required!" } });
+                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Email Or Phone number is required!" }, Response = "Email is required!" });
             }
             if (string.IsNullOrWhiteSpace(model.Password))
             {
-                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Password is required!" } });
+                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Password is required!" }, Response= "Password is required!" });
             }
 
-            var userExists = await _userManager.FindByNameAsync(model.Email);
+            var userExists = await _userManager.FindByNameAsync(emailToUse);
 
             if (userExists != null)
             {
-                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "User already exists!" } });
+                return (null, new ResponseModel { Status = false, Errors = new List<string>() { "User already exists!" }, Response= "User already exists!" });
             }
             
 
@@ -134,8 +139,8 @@ namespace enforcerWeb.Controllers
                 var newUser = new EnforcerUser
                 {
                     Id = userIdToUse.ToString(),
-                    UserName = model.Email,
-                    Email = model.Email,
+                    UserName = emailToUse,
+                    Email = emailToUse,
                     PhoneNumber = model.PhoneNumber
                 };
 
@@ -224,6 +229,10 @@ namespace enforcerWeb.Controllers
                 return false;
             }
         }
+
+        [HttpPost("uploadCredentials")]
+        public async Task<ResponseModel> UploadVerificationDocs([FromForm] FileDTO stuff) => await _userService.PhysiotherapistVerificationFilesUpload(stuff); 
+
 
         [HttpPost("SignIn")]
         public async Task<ResponseModel> Login(LoginDTO model)
@@ -354,6 +363,28 @@ namespace enforcerWeb.Controllers
             }
             return new ResponseModel { Status = false, Response = "something went wrong" }; ;
         }
+
+        [HttpGet]
+        public async Task<ResponseModel> GetMyProfile()
+        {
+            var res = new ResponseModel();
+            var myClaims = User.Claims;
+            try
+            {
+                var userID = myClaims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
+                var userRoles = myClaims.First(x => x.Type == ClaimTypes.Role).Value;
+
+                res = userRoles == "Patient" ? await _userService.GetAPatient(Guid.Parse(userID)) : await _userService.GetAPhysioTherapist(Guid.Parse(userID));
+            }
+            catch (Exception)
+            {
+                return new ResponseModel { Status = false, Response = "Failed: Session expired. Kindly login again" };
+            }
+
+            return res;
+        }
+
+        //TODO: write verification endpoint here
     }
     
 }

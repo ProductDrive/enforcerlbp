@@ -4,14 +4,16 @@ using Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Data.Migrations
 {
     [DbContext(typeof(EnforcerContext))]
-    partial class EnforcerContextModelSnapshot : ModelSnapshot
+    [Migration("20221228200528_repairFeedback")]
+    partial class repairFeedback
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -314,9 +316,6 @@ namespace Data.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("OwnersName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FeedbackId");
@@ -477,11 +476,8 @@ namespace Data.Migrations
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RatingData")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("Ratings")
-                        .HasColumnType("float");
+                    b.Property<decimal>("Ratings")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Speciality")
                         .HasColumnType("nvarchar(max)");

@@ -2,6 +2,7 @@
 using DataAccess.UnitOfWork;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using Entities.Consultation;
 using Entities.Documents;
 using Entities.Users;
 using Microsoft.AspNetCore.Http;
@@ -24,6 +25,8 @@ namespace Services.Implementations
         private readonly IFirebase _firebase;
         private readonly IUnitOfWork<VerificationDocument> _unitOfWorkVerificationDocument;
         private readonly IUnitOfWork<PatientTherapist> _unitOfWorkPatientTherapist;
+        private readonly IUnitOfWork<ConsultationService> _unitOfWorkConsultation;
+        private readonly IUnitOfWork<PhysioSession> _unitOfWorkPhysioSessions;
 
         public UserService(
             IUnitOfWork<Physiotherapist> unitOfWorkPhysio,
@@ -31,7 +34,9 @@ namespace Services.Implementations
             IMapper mapper,
             IFirebase firebase,
             IUnitOfWork<VerificationDocument> unitOfWorkVerificationDocument,
-            IUnitOfWork<PatientTherapist> unitOfWorkPatientTherapist
+            IUnitOfWork<PatientTherapist> unitOfWorkPatientTherapist,
+            IUnitOfWork<ConsultationService> unitOfWorkConsultation,
+            IUnitOfWork<PhysioSession> unitOfWorkPhysioSessions
             )
         {
             _unitOfWorkPhysio = unitOfWorkPhysio;
@@ -40,15 +45,14 @@ namespace Services.Implementations
             _firebase = firebase;
             _unitOfWorkVerificationDocument = unitOfWorkVerificationDocument;
             _unitOfWorkPatientTherapist = unitOfWorkPatientTherapist;
+            _unitOfWorkConsultation = unitOfWorkConsultation;
+            _unitOfWorkPhysioSessions = unitOfWorkPhysioSessions;
         }
 
-        public async Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model)
-        {
-            var physiotherapist = _mapper.Map<PhysiotherapistDTO, Physiotherapist>(model);
-            await _unitOfWorkPhysio.Repository.Create(physiotherapist);
-            await _unitOfWorkPhysio.Save();
-            return new ResponseModel{ Status=true,Response="Therapist created Successfully"};
-        }
+       
+
+
+        #region Patients
         public async Task<ResponseModel> CreatePatient(PatientDTO model)
         {
             var patient = _mapper.Map<PatientDTO, Patient>(model);
@@ -57,13 +61,32 @@ namespace Services.Implementations
             return new ResponseModel { Status = true, Response = "Patient created Successfully" };
         }
 
+        public async Task<ResponseModel> GetAPatient(Guid Id)
+        {
+            var pat = await _unitOfWorkPatient.Repository.GetByID(Id);
+            var patDTO = _mapper.Map<PatientDTO>(pat);
+            return new ResponseModel { Status = true, Response = "successful", ReturnObj = patDTO };
+        }
+        #endregion
+
+
+        #region Physiotherapists
+        public async Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model)
+        {
+            var physiotherapist = _mapper.Map<PhysiotherapistDTO, Physiotherapist>(model);
+            await _unitOfWorkPhysio.Repository.Create(physiotherapist);
+            await _unitOfWorkPhysio.Save();
+            return new ResponseModel { Status = true, Response = "Therapist created Successfully" };
+        }
+
+
         public async Task<ResponseModel> PhysiotherapistVerificationFilesUpload(FileDTO document)
         {
-            if(document.DegreeCert.FileName.Length < 1 && document.License.FileName .Length < 1) return new ResponseModel { Status = false, Response = "All required documents must be attached" };
+            if (document.DegreeCert.FileName.Length < 1 && document.License.FileName.Length < 1) return new ResponseModel { Status = false, Response = "All required documents must be attached" };
             string[] allowedExtensions = { ".doc", ".docx", ".ppt", ".pdf" };
             string getDegreeCertExtension = Path.GetExtension(document.DegreeCert.FileName);
             string getLicenseExtension = Path.GetExtension(document.License.FileName);
-            
+
             //TODO: refactor the if statement
             if (!allowedExtensions.Contains(getDegreeCertExtension) && !allowedExtensions.Contains(getLicenseExtension))
             {
@@ -89,16 +112,16 @@ namespace Services.Implementations
                 }
 
             };
-            try 
+            try
             {
                 await _unitOfWorkVerificationDocument.Repository.CreateMany(Documents);
-                await UpdatePhysiotherapist(document.PhysiotherapistId, new Physiotherapist{ IsOnboarded = true, ID = document.PhysiotherapistId});
+                await UpdatePhysiotherapist(document.PhysiotherapistId, new Physiotherapist { IsOnboarded = true, ID = document.PhysiotherapistId });
 
                 await _unitOfWorkVerificationDocument.Save();
                 return new ResponseModel { Status = true, Response = "Documents uploaded successfully" };
 
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return new ResponseModel { Status = true, Response = "Somthing went wrong while saving the documents" };
             }
@@ -106,17 +129,16 @@ namespace Services.Implementations
 
         public async Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, Physiotherapist therapist)
         {
-          var physioToUpdate = await  _unitOfWorkPhysio.Repository.GetByID(physioId);
+            var physioToUpdate = await _unitOfWorkPhysio.Repository.GetByID(physioId);
 
             //accept properties to change
             physioToUpdate.FirstName = string.IsNullOrWhiteSpace(therapist.FirstName) ? physioToUpdate.FirstName : therapist.FirstName;
             physioToUpdate.MiddleName = string.IsNullOrWhiteSpace(therapist.MiddleName) ? physioToUpdate.MiddleName : therapist.MiddleName;
             physioToUpdate.LastName = string.IsNullOrWhiteSpace(therapist.LastName) ? physioToUpdate.LastName : therapist.LastName;
-            physioToUpdate.About = string.IsNullOrWhiteSpace(therapist.About) ? physioToUpdate.About : therapist.About; 
+            physioToUpdate.About = string.IsNullOrWhiteSpace(therapist.About) ? physioToUpdate.About : therapist.About;
             physioToUpdate.DateLastModified = DateTime.UtcNow;
             physioToUpdate.Age = therapist.Age == 0 ? physioToUpdate.Age : therapist.Age;
             physioToUpdate.IsVerified = therapist.IsVerified == false ? physioToUpdate.IsVerified : therapist.IsVerified;
-            physioToUpdate.Ratings = therapist.Ratings == 0 ? physioToUpdate.Ratings : therapist.Ratings;
             physioToUpdate.DOB = therapist.DOB;
             physioToUpdate.Addressline = string.IsNullOrWhiteSpace(therapist.Addressline) ? physioToUpdate.Addressline : therapist.Addressline;
             physioToUpdate.PhoneNumber = string.IsNullOrWhiteSpace(therapist.PhoneNumber) ? physioToUpdate.PhoneNumber : therapist.PhoneNumber;
@@ -127,11 +149,11 @@ namespace Services.Implementations
             physioToUpdate.Experience = therapist.Experience == 0 ? physioToUpdate.Experience : therapist.Experience;
             physioToUpdate.State = string.IsNullOrWhiteSpace(therapist.State) ? physioToUpdate.State : therapist.State;
 
-            
+
             _unitOfWorkPhysio.Repository.Update(physioToUpdate);
-           await _unitOfWorkPhysio.Save();
-           return new ResponseModel { Status = true, Response = "Update Successful",ReturnObj = physioToUpdate};
-          
+            await _unitOfWorkPhysio.Save();
+            return new ResponseModel { Status = true, Response = "Update Successful", ReturnObj = physioToUpdate };
+
         }
 
         public ResponseModel GetPhysiotherapists(int pageNo)
@@ -142,7 +164,7 @@ namespace Services.Implementations
                 .OrderByDescending(x => x.Ratings)
                 .Take(pageNo).ToList();
 
-                return new ResponseModel { Status = true, Response = "Success", ReturnObj = physios };
+                return new ResponseModel { Status = true, Response = "Success", ReturnObj = _mapper.Map<PhysiotherapistDTO>(physios) };
             }
             catch (Exception ex)
             {
@@ -163,10 +185,35 @@ namespace Services.Implementations
             physioToVerify.IsVerified = true;
             _unitOfWorkPhysio.Repository.Update(physioToVerify);
             await _unitOfWorkPhysio.Save();
-            return new ResponseModel { Status=true, Response = "Physiotherapist is Verified", ReturnObj = physioToVerify};
+            return new ResponseModel { Status = true, Response = "Physiotherapist is Verified", ReturnObj = physioToVerify };
 
 
         }
+
+        public async Task<ResponseModel> RatePhysiotherapist(Guid therapistId, int value)
+        {
+            //search physio
+            var therapist = await _unitOfWorkPhysio.Repository.GetByID(therapistId);
+
+            //add current to rating data
+            therapist.RatingData = string.IsNullOrWhiteSpace(therapist.RatingData) ? $"{value}" : therapist.RatingData + $",{value}";
+            //calculate average from rating data
+            var ratingData = therapist.RatingData.Split(',');
+            var averageRating = Math.Round(Array.ConvertAll(ratingData, delegate (string s) { return Convert.ToInt32(s); }).Average(), 1);
+            therapist.Ratings = averageRating;
+            try
+            {
+                _unitOfWorkPhysio.Repository.Update(therapist);
+                await _unitOfWorkPhysio.Save();
+                return new ResponseModel { Status = true, Response = "Successful" };
+            }
+            catch (Exception)
+            {
+                return new ResponseModel { Status = false, Response = "Failed" };
+            }
+        }
+
+        #endregion
 
         #region PatientPhysiotherapist Connection
         public ResponseModel GetPhysiotherapists(string searchText)
@@ -269,6 +316,44 @@ namespace Services.Implementations
 
         #endregion
 
+
+        #region PhysiotherapistServices
+        // Physiotherapist sessions
+        public async Task<ResponseModel> CreateASession(List<PhysioSessionDTO> sessions)
+        {
+            var physioSessions = new List<PhysioSession>();
+            foreach (var item in sessions)
+            {
+                physioSessions.Add(_mapper.Map<PhysioSession>(item));
+            }
+            try
+            {
+                await _unitOfWorkPhysioSessions.Repository.CreateMany(physioSessions);
+                await _unitOfWorkPhysioSessions.Save();
+                return new ResponseModel { Status = true, Response = "Successful" };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = ex.Message ?? ex.InnerException.Message };
+            }
+        }
+
+        public ResponseModel GetATherapistSessions(Guid therapistId)
+        {
+            var query = _unitOfWorkPhysioSessions.Repository.GetAllQuery().Where(s => s.PhysiotherapistID == therapistId);
+            if (query.Any())
+            {
+                List<PhysioSessionDTO> result = new List<PhysioSessionDTO>();
+                foreach (var item in query)
+                {
+                    result.Add(_mapper.Map<PhysioSessionDTO>(item));
+                }
+                return new ResponseModel { Status = true, Response = "Successful", ReturnObj = result };
+            }
+            return new ResponseModel { Status = false, Response = "No session sevice foun for this physiotherapist" };
+        }
+
+        #endregion
 
     }
 

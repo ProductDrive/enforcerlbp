@@ -2,6 +2,7 @@
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
 using Entities;
+using Entities.Consultation;
 using Entities.Users;
 using Infrastructures.NotificationService;
 using System.Collections.Generic;
@@ -24,6 +25,16 @@ namespace enforcerWeb.Helper
             CreateMap<NotificationCommand, Notification>();
             CreateMap<ExercisePrescription, ExercisePrescriptionDTO>();
             CreateMap<ExercisePrescriptionDTO, ExercisePrescription>();
+            CreateMap<ExerciseDTO, Exercise>();
+            CreateMap<Exercise, ExerciseDTO>();
+            CreateMap<Feedback, FeedbackRequestDTO>();
+            CreateMap<FeedbackRequestDTO, Feedback>();
+            CreateMap<FeedbackResponseDTO, Feedback>();
+            CreateMap<Feedback, FeedbackResponseDTO>();
+            CreateMap<FeedbackReply, FeedbackReplyDTO>();
+            CreateMap<FeedbackReplyDTO, FeedbackReply>();
+            CreateMap<PhysioSessionDTO, PhysioSession>();
+            CreateMap<PhysioSession, PhysioSessionDTO>();
         }
     }
 }

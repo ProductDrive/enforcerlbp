@@ -9,6 +9,6 @@ namespace DTOs.RequestObject
     {
         public Guid ExercisePrescriptionId { get; set; }
         public IFormFile Video { get; set; }
-
+        public bool IsLiveMonitored { get; set; }
     }
 }
