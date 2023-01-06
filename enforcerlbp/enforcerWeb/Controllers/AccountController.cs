@@ -386,7 +386,16 @@ namespace enforcerWeb.Controllers
             return res;
         }
 
+        [HttpPut("therapist")]
+        [Authorize(Policy = "Therapist")]
+        public async Task<ResponseModel> EditPhysiotherapist(Guid Id, PhysiotherapistDTO request) => await _userService.UpdatePhysiotherapist(Id, request);
+
+        [HttpPut("Patient")]
+        [Authorize(Policy = "Patient")]
+        public async Task<ResponseModel> EditPatient(Guid Id, PatientDTO request) => await _userService.UpdatePatient(Id, request);
+
+
         //TODO: write verification endpoint here
     }
-    
+
 }
