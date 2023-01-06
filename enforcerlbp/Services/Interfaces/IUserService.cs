@@ -23,7 +23,8 @@ namespace Services.Interfaces
         Task<ResponseModel> PatientConnectStatus(ConnectionRequestDTO request);
         Task<ResponseModel> PhysiotherapistVerificationFilesUpload(FileDTO document);
         Task<ResponseModel> RatePhysiotherapist(Guid therapistId, int value);
-        Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, Physiotherapist therapist);
+        Task<ResponseModel> UpdatePatient(Guid patientId, PatientDTO patient);
+        Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, PhysiotherapistDTO therapist);
         Task<ResponseModel> Verification(Guid physiotherapistId);
     }
 }

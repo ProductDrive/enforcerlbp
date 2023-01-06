@@ -17,10 +17,9 @@ namespace DTOs.RequestObject
         public string State { get; set; }
         public string Country { get; set; }
         public string DOB { get; set; }
-        public int Age { get; set; }
-
+        private DateTime therapitDOB;
+        public int Age => DateTime.TryParse(DOB, out therapitDOB) ? ((int)(DateTime.Now - therapitDOB).TotalDays / 365) : 0;
         public string Gender { get; set; }
-
         public DateTime DateCreated { get; set; }
         public DateTime DateLastModified { get; set; }
     }
