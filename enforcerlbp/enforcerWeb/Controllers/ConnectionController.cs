@@ -19,6 +19,7 @@ namespace enforcerWeb.Controllers
 {
     
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class ConnectionController:ControllerBase
     {
@@ -103,9 +104,11 @@ namespace enforcerWeb.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Patient")]
         [HttpGet("mytherapists")]
         public ResponseModel GetMyPhysiotherapists(Guid patientId) => _userService.MyPhysiotherapists(patientId);
-
+        
+        [Authorize(Policy = "Patient")]
         [HttpPost("rating")]
         public async Task<ResponseModel> RateAPhysiotherapist(Guid therapistId, int value) => await _userService.RatePhysiotherapist(therapistId, value);
        

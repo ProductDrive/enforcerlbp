@@ -6,6 +6,7 @@ using enforcerWeb.Helper;
 using Infrastructures.EmailServices;
 using Infrastructures.IdentityProviders;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -364,6 +365,7 @@ namespace enforcerWeb.Controllers
             return new ResponseModel { Status = false, Response = "something went wrong" }; ;
         }
 
+        [Authorize(Policy ="AppUser")]
         [HttpGet]
         public async Task<ResponseModel> GetMyProfile()
         {
