@@ -4,6 +4,7 @@ using enforcerWeb.Helper;
 using Entities;
 using Infrastructures.EmailServices;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Services.Interfaces;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 namespace enforcerWeb.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class ExerciseController : ControllerBase
     {
@@ -28,15 +30,19 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Admin")]
         public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
 
         [HttpGet]
+        [Authorize(Policy = "Users")]
         public async Task<ResponseModel> GetOneExercise(Guid Id) => await _exerciseService.GetExercise(Id);
 
         [HttpGet("categorized")]
+        [Authorize(Policy = "Users")]
         public async Task<ResponseModel> GetExerciseByCategories() => await _exerciseService.ExerciseCategory();
 
         [HttpPost("completed")]
+        [Authorize(Policy = "Patient")]
         public async Task<IActionResult> ExerciseCompletion([FromForm]ExerciseCompleteDTO exerComplete)
         {
 
@@ -67,6 +73,7 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost("completedlive")]
+        [Authorize(Policy = "Users")]
         public async Task<IActionResult> LiveExerciseCompletion(ExerciseCompleteDTO exerComplete)
         {
 
@@ -99,12 +106,15 @@ namespace enforcerWeb.Controllers
 
 
         [HttpGet("myexercises")]
+        [Authorize(Policy = "AppUser")]
         public IActionResult GetMyExercises(Guid ownerId, bool isPatient) => Ok(_exerciseService.GetMyPrescription (ownerId, isPatient));
 
         [HttpGet("prescription")]
+        [Authorize(Policy = "Users")]
         public async Task<IActionResult> GetAPrescription(Guid id) => Ok(await _exerciseService.GetAPrescription(id));
 
         [HttpPost("prescription")]
+        [Authorize(Policy = "Therapist")]
         public async Task<IActionResult> AddExercisePrescription(ExercisePrescriptionDTO request)
         {
             var result = await _exerciseService.CreateAnExercisePrescription(request);
@@ -135,9 +145,11 @@ namespace enforcerWeb.Controllers
 
         //FEEDBACK ENDPOINTS
         [HttpPost("addfeedback")]
+        [Authorize(Policy = "Patient")]
         public async Task<ResponseModel> ExerciseFeedback(FeedbackRequestDTO model) => await _exerciseService.AddFeedBackToExercise(model);
 
         [HttpPost("feedbackreply")]
+        [Authorize(Policy = "AppUser")]
         public async Task<ResponseModel> AddAReply(FeedbackReplyDTO model)
         {
             var response = await _exerciseService.AddAFeedBackReply(model);
@@ -148,9 +160,11 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpGet("feedbacklist")]
+        [Authorize(Policy = "AppUser")]
         public ResponseModel GetFeedbacks(Guid patientId) => _exerciseService.GetFeedBacks(patientId);
 
         [HttpGet("feedback")]
+        [Authorize(Policy = "AppUser")]
         public ResponseModel GetOneFeedback(Guid Id) => _exerciseService.GetFeedback(Id);
         //send notification for feedback replies
     }
