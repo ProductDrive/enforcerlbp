@@ -112,6 +112,8 @@ namespace enforcerWeb
                 options.AddPolicy("Admin", policy=>policy.RequireRole("Admin", "Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Therapist", policy=>policy.RequireRole("Admin","Physiotherapist","Developer").RequireAuthenticatedUser());
                 options.AddPolicy("Patient", policy=>policy.RequireRole("Admin","Patient","Developer").RequireAuthenticatedUser());
+                options.AddPolicy("AppUser", policy => policy.RequireRole("Physiotherapist", "Patient").RequireAuthenticatedUser());
+                options.AddPolicy("Users", policy => policy.RequireRole("Admin","Physiotherapist", "Patient").RequireAuthenticatedUser());
 
             });
 
