@@ -115,7 +115,7 @@ namespace Services.Implementations
             try
             {
                 await _unitOfWorkVerificationDocument.Repository.CreateMany(Documents);
-                await UpdatePhysiotherapist(document.PhysiotherapistId, new Physiotherapist { IsOnboarded = true, ID = document.PhysiotherapistId });
+                await UpdatePhysiotherapist(document.PhysiotherapistId, new PhysiotherapistDTO { IsOnboarded = true, ID = document.PhysiotherapistId });
 
                 await _unitOfWorkVerificationDocument.Save();
                 return new ResponseModel { Status = true, Response = "Documents uploaded successfully" };
@@ -127,7 +127,7 @@ namespace Services.Implementations
             }
         }
 
-        public async Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, Physiotherapist therapist)
+        public async Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, PhysiotherapistDTO therapist)
         {
             var physioToUpdate = await _unitOfWorkPhysio.Repository.GetByID(physioId);
 
@@ -137,9 +137,7 @@ namespace Services.Implementations
             physioToUpdate.LastName = string.IsNullOrWhiteSpace(therapist.LastName) ? physioToUpdate.LastName : therapist.LastName;
             physioToUpdate.About = string.IsNullOrWhiteSpace(therapist.About) ? physioToUpdate.About : therapist.About;
             physioToUpdate.DateLastModified = DateTime.UtcNow;
-            physioToUpdate.Age = therapist.Age == 0 ? physioToUpdate.Age : therapist.Age;
             physioToUpdate.IsVerified = therapist.IsVerified == false ? physioToUpdate.IsVerified : therapist.IsVerified;
-            physioToUpdate.DOB = therapist.DOB;
             physioToUpdate.Addressline = string.IsNullOrWhiteSpace(therapist.Addressline) ? physioToUpdate.Addressline : therapist.Addressline;
             physioToUpdate.PhoneNumber = string.IsNullOrWhiteSpace(therapist.PhoneNumber) ? physioToUpdate.PhoneNumber : therapist.PhoneNumber;
             physioToUpdate.Country = string.IsNullOrWhiteSpace(therapist.Country) ? physioToUpdate.Country : therapist.Country;
@@ -148,11 +146,37 @@ namespace Services.Implementations
             physioToUpdate.Email = string.IsNullOrWhiteSpace(therapist.Email) ? physioToUpdate.Email : therapist.Email;
             physioToUpdate.Experience = therapist.Experience == 0 ? physioToUpdate.Experience : therapist.Experience;
             physioToUpdate.State = string.IsNullOrWhiteSpace(therapist.State) ? physioToUpdate.State : therapist.State;
-
-
+            physioToUpdate.DOB = string.IsNullOrWhiteSpace(therapist.DOB) ? physioToUpdate.DOB : therapist.DOB;
+            physioToUpdate.Age = therapist.Age == 0 ? physioToUpdate.Age : therapist.Age;
             _unitOfWorkPhysio.Repository.Update(physioToUpdate);
             await _unitOfWorkPhysio.Save();
             return new ResponseModel { Status = true, Response = "Update Successful", ReturnObj = physioToUpdate };
+
+        }
+
+        public async Task<ResponseModel> UpdatePatient(Guid patientId, PatientDTO patient)
+        {
+            var patientToUpdate = await _unitOfWorkPatient.Repository.GetByID(patientId);
+
+            //accept properties to change
+            patientToUpdate.FirstName = string.IsNullOrWhiteSpace(patient.FirstName) ? patientToUpdate.FirstName : patient.FirstName;
+            patientToUpdate.MiddleName = string.IsNullOrWhiteSpace(patient.MiddleName) ? patientToUpdate.MiddleName : patient.MiddleName;
+            patientToUpdate.LastName = string.IsNullOrWhiteSpace(patient.LastName) ? patientToUpdate.LastName : patient.LastName;
+            patientToUpdate.DateLastModified = DateTime.UtcNow;
+            patientToUpdate.Age = patient.Age == 0 ? patientToUpdate.Age : patient.Age;
+            patientToUpdate.DOB = string.IsNullOrWhiteSpace(patient.DOB) ? patientToUpdate.DOB: patient.DOB;
+            patientToUpdate.Addressline = string.IsNullOrWhiteSpace(patient.Addressline) ? patientToUpdate.Addressline : patient.Addressline;
+            patientToUpdate.PhoneNumber = string.IsNullOrWhiteSpace(patient.PhoneNumber) ? patientToUpdate.PhoneNumber : patient.PhoneNumber;
+            patientToUpdate.Country = string.IsNullOrWhiteSpace(patient.Country) ? patientToUpdate.Country : patient.Country;
+            patientToUpdate.ProfilePictureUrl = string.IsNullOrWhiteSpace(patient.ProfilePictureUrl) ? patientToUpdate.ProfilePictureUrl : patient.ProfilePictureUrl;
+            patientToUpdate.Gender = string.IsNullOrWhiteSpace(patient.Gender) ? patientToUpdate.Gender : patient.Gender;
+            patientToUpdate.Email = string.IsNullOrWhiteSpace(patient.Email) ? patientToUpdate.Email : patient.Email;
+            patientToUpdate.State = string.IsNullOrWhiteSpace(patient.State) ? patientToUpdate.State : patient.State;
+
+
+            _unitOfWorkPatient.Repository.Update(patientToUpdate);
+            await _unitOfWorkPhysio.Save();
+            return new ResponseModel { Status = true, Response = "Update Successful", ReturnObj = patientToUpdate };
 
         }
 
