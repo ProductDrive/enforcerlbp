@@ -2,6 +2,7 @@
 using DataAccess.UnitOfWork;
 using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using Entities;
 using Entities.Consultation;
 using Entities.Documents;
 using Entities.Users;
@@ -27,6 +28,7 @@ namespace Services.Implementations
         private readonly IUnitOfWork<PatientTherapist> _unitOfWorkPatientTherapist;
         private readonly IUnitOfWork<ConsultationService> _unitOfWorkConsultation;
         private readonly IUnitOfWork<PhysioSession> _unitOfWorkPhysioSessions;
+        private readonly IUnitOfWork<Notification> _unitOfWorkNotifications;
 
         public UserService(
             IUnitOfWork<Physiotherapist> unitOfWorkPhysio,
@@ -36,7 +38,9 @@ namespace Services.Implementations
             IUnitOfWork<VerificationDocument> unitOfWorkVerificationDocument,
             IUnitOfWork<PatientTherapist> unitOfWorkPatientTherapist,
             IUnitOfWork<ConsultationService> unitOfWorkConsultation,
-            IUnitOfWork<PhysioSession> unitOfWorkPhysioSessions
+            IUnitOfWork<PhysioSession> unitOfWorkPhysioSessions,
+            IUnitOfWork<Notification> unitOfWorkNotifications
+            
             )
         {
             _unitOfWorkPhysio = unitOfWorkPhysio;
@@ -47,6 +51,7 @@ namespace Services.Implementations
             _unitOfWorkPatientTherapist = unitOfWorkPatientTherapist;
             _unitOfWorkConsultation = unitOfWorkConsultation;
             _unitOfWorkPhysioSessions = unitOfWorkPhysioSessions;
+            _unitOfWorkNotifications = unitOfWorkNotifications;
         }
 
        
@@ -67,10 +72,32 @@ namespace Services.Implementations
             var patDTO = _mapper.Map<PatientDTO>(pat);
             return new ResponseModel { Status = true, Response = "successful", ReturnObj = patDTO };
         }
+
+
+
         #endregion
 
 
         #region Physiotherapists
+        public ResponseModel GetMyPatients(Guid therapistId)
+        {
+            var connectionQuery = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
+                .Where(p => p.PhysiotherapistID == therapistId && p.ConnectionStatus == ConnectionStatus.accepted);
+            if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not connected to any physiotherapist" };
+
+            var patientIds = connectionQuery.Select(x => x.PatientID).ToList();
+
+            var patientss = _unitOfWorkPatient.Repository.GetAllQuery()
+                .Where(x => patientIds.Contains(x.ID))
+                .Select(p => new PatientDTO { ID = p.ID, FirstName = p.FirstName, MiddleName = p.MiddleName, LastName = p.LastName, Email = p.Email, PhoneNumber = p.PhoneNumber });
+            if (patientss.Any())
+            {
+                return new ResponseModel { Status = true, Response = "Success", ReturnObj = patientss.ToList() };
+            }
+
+            return new ResponseModel { Status = false, Response = "Failed" };
+        }
+
         public async Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model)
         {
             var physiotherapist = _mapper.Map<PhysiotherapistDTO, Physiotherapist>(model);
@@ -78,7 +105,6 @@ namespace Services.Implementations
             await _unitOfWorkPhysio.Save();
             return new ResponseModel { Status = true, Response = "Therapist created Successfully" };
         }
-
 
         public async Task<ResponseModel> PhysiotherapistVerificationFilesUpload(FileDTO document)
         {
@@ -237,6 +263,22 @@ namespace Services.Implementations
             }
         }
 
+        public async Task<int> ProfileCompletedRate(Guid therapistId)
+        {
+            // 17 total properties: completed / total * 100
+            var therapist = await _unitOfWorkPhysio.Repository.GetByID(therapistId);
+            var therapistComp = _mapper.Map<PhysiotherapistCompareCompletedDTO>(therapist);
+            var propertiesCompleted = (decimal)therapistComp.GetType().GetProperties().Where(x => x.GetValue(therapistComp) == null).Count();
+            var totalProperties = (decimal)17;
+            int percentageCompleted = (int)Math.Round((propertiesCompleted / totalProperties) * 100, 0);
+            return percentageCompleted;
+        }
+
+        public int MyNotifications(Guid therapistID)
+        {
+            return _unitOfWorkNotifications.Repository.GetAllQuery().Count(x => x.OwnerId == therapistID);
+        }
+
         #endregion
 
         #region PatientPhysiotherapist Connection
@@ -377,6 +419,11 @@ namespace Services.Implementations
             return new ResponseModel { Status = false, Response = "No session sevice foun for this physiotherapist" };
         }
 
+        #endregion
+
+
+        #region General
+        
         #endregion
 
     }
