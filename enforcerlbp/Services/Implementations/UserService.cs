@@ -97,6 +97,24 @@ namespace Services.Implementations
 
             return new ResponseModel { Status = false, Response = "Failed" };
         }
+        public ResponseModel GetMyPhysiotherapist(Guid patientId)
+        {
+            var connectionQuery = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
+                .Where(p => p.PatientID == patientId && p.ConnectionStatus == ConnectionStatus.accepted);
+            if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not connected to any physiotherapist" };
+
+            var therapistIds = connectionQuery.Select(x => x.PhysiotherapistID).ToList();
+
+            var therapists = _unitOfWorkPhysio.Repository.GetAllQuery()
+                .Where(x => therapistIds.Contains(x.ID))
+                .Select(p => new PhysiotherapistDTO { ID = p.ID, FirstName = p.FirstName, MiddleName = p.MiddleName, LastName = p.LastName, Email = p.Email, PhoneNumber = p.PhoneNumber });
+            if (therapists.Any())
+            {
+                return new ResponseModel { Status = true, Response = "Success", ReturnObj = therapists.ToList() };
+            }
+
+            return new ResponseModel { Status = false, Response = "Failed" };
+        }
 
         public async Task<ResponseModel> CreatePhysiotherapist(PhysiotherapistDTO model)
         {
@@ -274,9 +292,9 @@ namespace Services.Implementations
             return percentageCompleted;
         }
 
-        public int MyNotifications(Guid therapistID)
+        public int MyNotifications(Guid UserID)
         {
-            return _unitOfWorkNotifications.Repository.GetAllQuery().Count(x => x.OwnerId == therapistID);
+            return _unitOfWorkNotifications.Repository.GetAllQuery().Count(x => x.OwnerId == UserID && !x.IsRead);
         }
 
         #endregion

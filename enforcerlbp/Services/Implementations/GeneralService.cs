@@ -61,8 +61,36 @@ namespace Services.Implementations
                     } };
 
         }
+        public async Task<ResponseModel> GetPatientDashboardData(Guid patientID)
+        {
+            //notification
+            var notifications = _userService.MyNotifications(patientID);
+            //The patient
+            var patientRes = await _userService.GetAPatient(patientID);
+            string jsonformOfresult = JsonConvert.SerializeObject(patientRes.ReturnObj);
+            var patient = JsonConvert.DeserializeObject<PatientDTO>(jsonformOfresult);
 
+            //physiotherapist
+            var result = _userService.GetMyPhysiotherapist(patientID);
+            string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
+            var physiotherapists = JsonConvert.DeserializeObject<List<PhysiotherapistDTO>>(jsonformOfresult);
+            return new ResponseModel
+            {
+                Status = true,
+                Response = "Successful",
+                ReturnObj = new
+                {
+                    Patient = patient,
+                    Physiotherapist = physiotherapists,
+                    Notification = notifications
+                }
+            };
+
+        
+    }
         #endregion
+
+        
 
     }
 }
