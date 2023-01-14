@@ -35,6 +35,7 @@ namespace enforcerWeb.Helper
             CreateMap<FeedbackReplyDTO, FeedbackReply>();
             CreateMap<PhysioSessionDTO, PhysioSession>();
             CreateMap<PhysioSession, PhysioSessionDTO>();
+            CreateMap<Physiotherapist, PhysiotherapistCompareCompletedDTO>();
         }
     }
 }

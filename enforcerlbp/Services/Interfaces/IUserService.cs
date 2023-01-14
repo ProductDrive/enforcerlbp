@@ -16,12 +16,16 @@ namespace Services.Interfaces
         Task<ResponseModel> GetAPatient(Guid Id);
         Task<ResponseModel> GetAPhysioTherapist(Guid Id);
         ResponseModel GetATherapistSessions(Guid therapistId);
+        ResponseModel GetMyPatients(Guid therapistId);
+        ResponseModel GetMyPhysiotherapist(Guid patientId);
         ResponseModel GetPhysiotherapists(int pageNo);
         ResponseModel GetPhysiotherapists(string searchText);
+        int MyNotifications(Guid UserID);
         ResponseModel MyPhysiotherapists(Guid patientId);
         Task<ResponseModel> PatientConnectRequest(ConnectionRequestDTO request);
         Task<ResponseModel> PatientConnectStatus(ConnectionRequestDTO request);
         Task<ResponseModel> PhysiotherapistVerificationFilesUpload(FileDTO document);
+        Task<int> ProfileCompletedRate(Guid therapistId);
         Task<ResponseModel> RatePhysiotherapist(Guid therapistId, int value);
         Task<ResponseModel> UpdatePatient(Guid patientId, PatientDTO patient);
         Task<ResponseModel> UpdatePhysiotherapist(Guid physioId, PhysiotherapistDTO therapist);
