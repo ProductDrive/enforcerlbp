@@ -40,9 +40,17 @@ namespace enforcerWeb.Controllers
         [HttpGet("therapistsearch")]
         public ResponseModel GetPhysiotherapist(string txt) => _userService.GetPhysiotherapists(txt);
 
+        [Authorize(Policy = "Users")]
+        [HttpGet("pending")]
+        public ResponseModel PendingConnection(Guid patientId) => _userService.GetPendingConnections(patientId);
+
+        [Authorize(Policy = "Users")]
+        [HttpGet("myConnections")]
+        public ResponseModel AllConnection(Guid userId) => _userService.GetAllConnections(userId);
+
         [Authorize(Policy = "Patient")]
         [HttpPost("sendconnection")]
-        public async Task<IActionResult> ConnectToATherapist(ConnectionRequestDTO request)
+        public async Task<IActionResult> ConnectToATherapist(ConnectionsDTO request)
         {
             var result = await _userService.PatientConnectRequest(request);
             if (result.Status)
@@ -76,12 +84,12 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost("editconnection")]
-        public async Task<IActionResult> UpdateConnection(ConnectionRequestDTO request)
+        public async Task<IActionResult> UpdateConnection(ConnectionsDTO request)
         {
             var result = await _userService.PatientConnectStatus(request);
             if (result.Status)
             {
-                var updatePatientTherapist = JsonConvert.DeserializeObject<ConnectionRequestDTO>(JsonConvert.SerializeObject(result.ReturnObj));
+                var updatePatientTherapist = JsonConvert.DeserializeObject<ConnectionsDTO>(JsonConvert.SerializeObject(result.ReturnObj));
                 //send notification
                 
                 if(updatePatientTherapist.ConnectionStatus != ConnectionStatus.disconnected)
@@ -93,11 +101,14 @@ namespace enforcerWeb.Controllers
                 if (updatePatientTherapist.ConnectionStatus == ConnectionStatus.disconnected)
                 {
                     var connectionMsg = NotificationHelper.GetNotificationMessage(updatePatientTherapist).Split('|');
-                    await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersManyMessages(new List<NotificationRequester>()
-                {
-                    new NotificationRequester{ Message = connectionMsg[0], OwnerID = request.PatientID},
-                    new NotificationRequester{ Message = connectionMsg[1], OwnerID = request.PhysiotherapistID}
-                }));
+                    await _mediatR
+                        .Send(
+                        NotificationHelper.GetNotificationModelManyOwnersManyMessages(
+                        new List<NotificationRequester>()
+                        {
+                            new NotificationRequester{ Message = connectionMsg[0], OwnerID = request.PatientID},
+                            new NotificationRequester{ Message = connectionMsg[1], OwnerID = request.PhysiotherapistID}
+                        }));
                 }
 
             }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Data.Migrations
 {
-    public partial class testingIntiMigration : Migration
+    public partial class initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -68,9 +68,9 @@ namespace Data.Migrations
                 columns: table => new
                 {
                     ID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExercisePrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FeedbackMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SenderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PainResponse = table.Column<int>(type: "int", nullable: false),
                     OtherComplaint = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -152,7 +152,8 @@ namespace Data.Migrations
                     DOB = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Age = table.Column<int>(type: "int", nullable: false),
                     Experience = table.Column<int>(type: "int", nullable: false),
-                    Ratings = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Ratings = table.Column<double>(type: "float", nullable: false),
+                    RatingData = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     About = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Speciality = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Gender = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -292,8 +293,8 @@ namespace Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     FeedbackId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Feedback = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OwnersName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>

@@ -10,13 +10,13 @@ namespace enforcerWeb.Helper
 {
     public class NotificationHelper
     {
-        public static string GetNotificationMessage(ConnectionRequestDTO updatePatientTherapist)
+        public static string GetNotificationMessage(ConnectionsDTO updatePatientTherapist)
         {
             string message = string.Empty;
             switch (updatePatientTherapist.ConnectionStatus)
             {
                 case ConnectionStatus.sent:
-                    message = $"Notification of your connection has been sent to the physiotherapist|Hello, {updatePatientTherapist.PatientName} likes your services and will like to connect with you. Kindly go to notifications in Health Enforcer app to accept connection";
+                    message = $"Notification of your connection has been sent to the physiotherapist|Hello, {updatePatientTherapist.PatientName} likes your services and will like to connect with you. Kindly go to the Patients tab in Health Enforcer app to accept connection";
                     break;
                 case ConnectionStatus.accepted:
                     message = $"Your connection request has been accepted by {updatePatientTherapist.TherapistName}";

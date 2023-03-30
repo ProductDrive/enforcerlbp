@@ -30,7 +30,7 @@ namespace enforcerWeb.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "Admin")]
+        //[Authorize(Policy = "Admin")]
         public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
 
         [HttpGet]

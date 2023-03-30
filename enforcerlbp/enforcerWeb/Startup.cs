@@ -60,6 +60,7 @@ namespace enforcerWeb
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IFirebase, Services.Implementations.Firebase>();
             services.AddTransient<IExerciseService, ExerciseService>();
+            services.AddTransient<IGeneralService, GeneralService>();
 
             services.AddIdentity<EnforcerUser, IdentityRole>(options =>
             {

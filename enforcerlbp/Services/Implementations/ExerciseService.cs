@@ -63,8 +63,8 @@ namespace Services.Implementations
         public async Task<ResponseModel> ExerciseCategory()
         {
             var exercises = await _unitOfWorkExercise.Repository.GetAll();
-            var exerciseCategory = exercises.GroupBy(s => s.Category);
-            return new ResponseModel { Status = true, Response="Successful", ReturnObj = exerciseCategory };
+            var exerciseCategory = exercises.GroupBy(s => s.Category).Select(x=> new {Category = x.Key, Exercises = x.ToList()});
+            return new ResponseModel { Status = true, Response="Successful", ReturnObj = exerciseCategory};
 
         }
 
@@ -95,11 +95,13 @@ namespace Services.Implementations
                 if (isPatient)
                 {
                     response.ReturnObj = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
+                    .Include(x=>x.Physiotherapist)
                     .Where(x => x.PatientId == ownerId);
                 }
                 else
                 {
                     response.ReturnObj = _unitOfWorkExercisePrescription.Repository.GetAllQuery()
+                    .Include(x=>x.Patient)
                     .Where(x => x.PhysiotherapistId == ownerId);
                 }
                 response.Status = true;
