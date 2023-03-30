@@ -8,6 +8,8 @@ using Entities.Documents;
 using Entities.Users;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Serilog;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -53,8 +55,7 @@ namespace Services.Implementations
             _unitOfWorkPhysioSessions = unitOfWorkPhysioSessions;
             _unitOfWorkNotifications = unitOfWorkNotifications;
         }
-
-       
+         
 
 
         #region Patients
@@ -83,7 +84,7 @@ namespace Services.Implementations
         {
             var connectionQuery = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
                 .Where(p => p.PhysiotherapistID == therapistId && p.ConnectionStatus == ConnectionStatus.accepted);
-            if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not connected to any physiotherapist" };
+            if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not connected to any patient" };
 
             var patientIds = connectionQuery.Select(x => x.PatientID).ToList();
 
@@ -126,7 +127,12 @@ namespace Services.Implementations
 
         public async Task<ResponseModel> PhysiotherapistVerificationFilesUpload(FileDTO document)
         {
-            if (document.DegreeCert.FileName.Length < 1 && document.License.FileName.Length < 1) return new ResponseModel { Status = false, Response = "All required documents must be attached" };
+            if (document.DegreeCert.FileName.Length < 1 && document.License.FileName.Length < 1)
+            {
+                Log.Fatal($"All required documents must be attached >>>>> File lenghts: DegreeCert={document.DegreeCert.Length} and Licence={document.License.Length}");
+                return new ResponseModel { Status = false, Response = "All required documents must be attached" };
+            }
+
             string[] allowedExtensions = { ".doc", ".docx", ".ppt", ".pdf" };
             string getDegreeCertExtension = Path.GetExtension(document.DegreeCert.FileName);
             string getLicenseExtension = Path.GetExtension(document.License.FileName);
@@ -134,6 +140,7 @@ namespace Services.Implementations
             //TODO: refactor the if statement
             if (!allowedExtensions.Contains(getDegreeCertExtension) && !allowedExtensions.Contains(getLicenseExtension))
             {
+                Log.Fatal("File select is not a document or the document is not supported.Ensure you select any of the listed document format: .doc, .docx, .ppt, .pdf");
                 return new ResponseModel { Status = false, Response = "File select is not a document or the document is not supported.Ensure you select any of the listed document format: .doc, .docx, .ppt, .pdf" };
             }
             var returnedDegreeUrl = await _firebase.FirebaseFileUpload(document.DegreeCert, "verificationdocs");
@@ -165,8 +172,9 @@ namespace Services.Implementations
                 return new ResponseModel { Status = true, Response = "Documents uploaded successfully" };
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Fatal($"{ex.Message ?? ex.InnerException.Message}>>>>> Documents submission");
                 return new ResponseModel { Status = true, Response = "Somthing went wrong while saving the documents" };
             }
         }
@@ -228,11 +236,17 @@ namespace Services.Implementations
         {
             try
             {
+                List<PhysiotherapistDTO> physiotherapistDTOs = new List<PhysiotherapistDTO>();   
                 var physios = _unitOfWorkPhysio.Repository.GetAllQuery()
                 .OrderByDescending(x => x.Ratings)
                 .Take(pageNo).ToList();
 
-                return new ResponseModel { Status = true, Response = "Success", ReturnObj = _mapper.Map<PhysiotherapistDTO>(physios) };
+                foreach (var item in physios)
+                {
+                    physiotherapistDTOs.Add(_mapper.Map<PhysiotherapistDTO>(item));
+                }
+
+                return new ResponseModel { Status = true, Response = "Success", ReturnObj = physiotherapistDTOs};
             }
             catch (Exception ex)
             {
@@ -286,9 +300,10 @@ namespace Services.Implementations
             // 17 total properties: completed / total * 100
             var therapist = await _unitOfWorkPhysio.Repository.GetByID(therapistId);
             var therapistComp = _mapper.Map<PhysiotherapistCompareCompletedDTO>(therapist);
-            var propertiesCompleted = (decimal)therapistComp.GetType().GetProperties().Where(x => x.GetValue(therapistComp) == null).Count();
-            var totalProperties = (decimal)17;
-            int percentageCompleted = (int)Math.Round((propertiesCompleted / totalProperties) * 100, 0);
+            var AllProperties =  (decimal)therapist.GetType().GetProperties().Count();
+            var propertiesNOTCompleted =  (decimal)therapistComp.GetType().GetProperties().Where(x => x.GetValue(therapistComp) == null).Count();
+            var totalProperties = (decimal)AllProperties;
+            int percentageCompleted = (int)Math.Round((AllProperties-propertiesNOTCompleted) / (totalProperties) * 100, 0);
             return percentageCompleted;
         }
 
@@ -300,6 +315,96 @@ namespace Services.Implementations
         #endregion
 
         #region PatientPhysiotherapist Connection
+
+
+        public ResponseModel GetPendingConnections(Guid ownerId)
+        {
+            var query = JsonConvert.SerializeObject(GetAllConnections(ownerId).ReturnObj);
+            var queryConn = JsonConvert.DeserializeObject<ConnectionRequestDTO>(query);
+            return new ResponseModel { Response = "Successful", ReturnObj = queryConn.Pending, Status = true };
+        }
+
+
+        //private ResponseModel RetrieveConnections(Guid ownerId)
+        //{
+            
+        //}
+
+
+
+
+
+        public ResponseModel GetAllConnections(Guid ownerId)
+        {
+            //1. get all users records frome PT table 2.check if any 3. if patient? call every pysio 4. if pysio call every patients 
+            var connectionQuery = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
+                .Where(p => (p.PatientID == ownerId || p.PhysiotherapistID == ownerId));
+
+            if (!connectionQuery.Any()) return new ResponseModel { Status = false, Response = "You have not sent connection request to any physiotherapist" };
+
+            List<ConnectionsDTO> connectionItems = new List<ConnectionsDTO>();
+
+            if (connectionQuery.First().PatientID == ownerId)
+            {
+                var pysioIDs = connectionQuery.Select(x => x.PhysiotherapistID).ToList(); 
+                var items = from ths in _unitOfWorkPhysio.Repository.GetAllQuery()
+                            .Where(s=> pysioIDs.Contains(s.ID))
+                            select new ConnectionsDTO
+                            {
+                                TherapistAge = ths.Age,
+                                TherapistEmail = ths.Email,
+                                TherapistGender = ths.Gender,
+                                PhysiotherapistID = ths.ID,
+                                TherapistName = $"{ths.FirstName} {ths.MiddleName} {ths.LastName}",
+                                TherapistPhone = ths.PhoneNumber,
+                                TherapistPhoto = ths.ProfilePictureUrl
+                            };
+
+                connectionItems = items.Any() ? items.ToList() : null;
+                if (connectionItems != null)
+                {
+                    connectionItems.ForEach(c =>
+                    {
+                        c.ConnectionStatus = connectionQuery.FirstOrDefault(x => x.PhysiotherapistID == c.PhysiotherapistID).ConnectionStatus;
+                    });
+                    
+                }
+            }
+
+            if (connectionQuery.First().PhysiotherapistID == ownerId)
+            {
+                var patientIDs = connectionQuery.Select(x => x.PatientID).ToList();
+                var items = from pats in _unitOfWorkPatient.Repository.GetAllQuery()
+                            .Where(s => patientIDs.Contains(s.ID))
+                            select new ConnectionsDTO
+                            {
+                                PatientAge = pats.Age,
+                                PatientEmail = pats.Email,
+                                PatientGender = pats.Gender,
+                                PatientID = pats.ID,
+                                PatientName = $"{pats.FirstName} {pats.MiddleName} {pats.LastName}",
+                                PatientPhone = pats.PhoneNumber,
+                                PatientPhoto = pats.ProfilePictureUrl
+                            };
+                connectionItems = items.Any() ? items.Distinct().ToList() : null;
+                if (connectionItems != null)
+                {
+                    connectionItems.ForEach(c =>
+                    {
+                        c.ConnectionStatus = connectionQuery.FirstOrDefault(x => x.PatientID == c.PatientID).ConnectionStatus;
+                    });
+                }
+            }
+
+            var conn = new ConnectionRequestDTO()
+            {
+                Current = connectionItems.Where(x => x.ConnectionStatus == ConnectionStatus.accepted).ToList(),
+                Pending = connectionItems.Where(x => x.ConnectionStatus == ConnectionStatus.sent).ToList()
+            };
+
+            return new ResponseModel { Response = "Successful", ReturnObj = conn, Status = true };
+        }
+
         public ResponseModel GetPhysiotherapists(string searchText)
         {
             try
@@ -334,7 +439,22 @@ namespace Services.Implementations
 
             var physios = _unitOfWorkPhysio.Repository.GetAllQuery()
                 .Where(x => physiosIds.Contains(x.ID))
-                .Select(p => new PhysioTherapistConnectDTO { ID = p.ID, FirstName = p.FirstName, MiddleName = p.MiddleName, LastName = p.LastName, Speciality = p.Speciality });
+                .Select(p => new PhysioTherapistConnectDTO
+                {
+                    ID = p.ID,
+                    FirstName = p.FirstName,
+                    MiddleName = p.MiddleName,
+                    LastName = p.LastName,
+                    Speciality = p.Speciality,
+                    Gender = p.Gender,
+                    Age = p.Age,
+                    Experience = p.Experience,
+                    ProfilePictureUrl = p.ProfilePictureUrl,
+                    State = p.State,
+                    Country = p.Country,
+                    Email = p.Email,
+                    Ratings = (decimal)p.Ratings
+                });
             if (physios.Any())
             {
                 return new ResponseModel {Status = true, Response = "Success", ReturnObj = physios.ToList() };
@@ -344,7 +464,7 @@ namespace Services.Implementations
         }
 
         //patient send connection request
-        public async Task<ResponseModel> PatientConnectRequest(ConnectionRequestDTO request)
+        public async Task<ResponseModel> PatientConnectRequest(ConnectionsDTO request)
         {
             var isConnected = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
                 .FirstOrDefault(x => x.PatientID == request.PatientID && x.PhysiotherapistID == request.PhysiotherapistID);
@@ -376,7 +496,7 @@ namespace Services.Implementations
         }
 
         // Accept, reject, or disconnect a patient
-        public async Task<ResponseModel> PatientConnectStatus(ConnectionRequestDTO request)
+        public async Task<ResponseModel> PatientConnectStatus(ConnectionsDTO request)
         {
             var isConnected = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
                 .FirstOrDefault(x => x.PatientID == request.PatientID && x.PhysiotherapistID == request.PhysiotherapistID);
@@ -440,8 +560,77 @@ namespace Services.Implementations
         #endregion
 
 
-        #region General
+        #region Notification
         
+        public ResponseModel GetNotifications(Guid ownerId)
+        {
+            var query = _unitOfWorkNotifications.Repository.GetAllQuery().Where(x => x.OwnerId == ownerId && !x.IsDeleted);
+            if (query.Any())
+            {
+                return new ResponseModel { Response = "Successful", Status = true, ReturnObj = query.ToList() };
+            }
+            return new ResponseModel { Response = "No notifications yet", Status = false };
+
+        }
+
+        public ResponseModel GetPendingNotifications(Guid ownerId)
+        {
+            var query = _unitOfWorkNotifications.Repository.GetAllQuery().Where(x => x.OwnerId == ownerId && !x.IsRead);
+            if (query.Any())
+            {
+                return new ResponseModel { Response = "Successful", Status = true, ReturnObj = query.ToList() };
+            }
+            return new ResponseModel { Response = "No notifications yet", Status = false };
+
+        }
+
+        public ResponseModel GetSeenNotifications(Guid ownerId)
+        {
+            var query = _unitOfWorkNotifications.Repository.GetAllQuery().Where(x => x.OwnerId == ownerId && x.IsRead);
+            if (query.Any())
+            {
+                return new ResponseModel { Response = "Successful", Status = true, ReturnObj = query.ToList() };
+            }
+            return new ResponseModel { Response = "No notifications yet", Status = false };
+
+        }
+
+        public async Task<ResponseModel> ReadNotification(Guid notificationId)
+        {
+            var query = await _unitOfWorkNotifications.Repository.GetByID(notificationId);
+
+            if (query != null)
+            {
+                query.IsRead = true;
+                 _unitOfWorkNotifications.Repository.Update(query);
+                await _unitOfWorkNotifications.Save();
+                return new ResponseModel { Response = "Successful", Status = true};
+            }
+            return new ResponseModel { Response = "No notifications yet", Status = false };
+
+        }
+
+        public async Task<ResponseModel> DeleteNotification(Guid notificationId)
+        {
+            var query = await _unitOfWorkNotifications.Repository.GetByID(notificationId);
+
+            if (query != null)
+            {
+                query.IsRead = true;
+                query.IsDeleted = true;
+                _unitOfWorkNotifications.Repository.Update(query);
+                await _unitOfWorkNotifications.Save();
+                return new ResponseModel { Response = "Successful", Status = true };
+            }
+            return new ResponseModel { Response = "No notifications yet", Status = false };
+
+        }
+
+        #endregion
+
+
+        #region General
+
         #endregion
 
     }

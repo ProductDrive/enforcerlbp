@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,33 +25,39 @@ namespace Services.Implementations
 
         public async Task<ResponseModel> GetTherapistDashboardData(Guid therapistID)
         {
-            //The therapist
-            var therapistRes = await _userService.GetAPhysioTherapist(therapistID);
-            string jsonformOfresult = JsonConvert.SerializeObject(therapistRes.ReturnObj);
-            var therapist = JsonConvert.DeserializeObject<PhysiotherapistDTO>(jsonformOfresult);
+            try
+            {
+                //The therapist
+                var therapistRes = await _userService.GetAPhysioTherapist(therapistID);
+                string jsonformOfresult = JsonConvert.SerializeObject(therapistRes.ReturnObj);
+                var therapist = JsonConvert.DeserializeObject<PhysiotherapistDTO>(jsonformOfresult);
 
-            //patients
-            var result = _userService.GetMyPatients(therapistID);
-            string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
-            var patients = JsonConvert.DeserializeObject<List<PatientDTO>>(jsonformOfresult);
+                //patients
+                var result = _userService.GetMyPatients(therapistID);
+                List<PatientDTO> patients = new List<PatientDTO>();
+                if (result.ReturnObj != null)
+                {
+                    string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
+                    patients = JsonConvert.DeserializeObject<List<PatientDTO>>(jsonresult);
+                }
 
-            //No of patients
-            var numberOfPatients = patients.Count;
+                //No of patients
+                var numberOfPatients = patients.Any() ? patients.Count : 0;
 
-            //percentage profile completed
-            var percentageCompleted = await _userService.ProfileCompletedRate(therapistID);
+                //percentage profile completed
+                var percentageCompleted = await _userService.ProfileCompletedRate(therapistID);
 
-            //Wallet Balance
-            var balance = new { Amount = 0, Status = "Inactive" };
+                //Wallet Balance
+                var balance = new { Amount = 0, Status = "Inactive" };
 
-            //Notification
-            var notifications = _userService.MyNotifications(therapistID);
+                //Notification
+                var notifications = _userService.MyNotifications(therapistID);
 
-            return new ResponseModel 
-                { 
-                    Status = true, 
-                    Response = "Successful", 
-                    ReturnObj = new 
+                return new ResponseModel
+                {
+                    Status = true,
+                    Response = "Successful",
+                    ReturnObj = new
                     {
                         Therapist = therapist,
                         Patient = patients,
@@ -58,7 +65,14 @@ namespace Services.Implementations
                         ProfileCompleted = percentageCompleted,
                         WalletBalance = balance,
                         Notification = notifications
-                    } };
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
 
         }
         public async Task<ResponseModel> GetPatientDashboardData(Guid patientID)
@@ -72,8 +86,14 @@ namespace Services.Implementations
 
             //physiotherapist
             var result = _userService.GetMyPhysiotherapist(patientID);
-            string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
-            var physiotherapists = JsonConvert.DeserializeObject<List<PhysiotherapistDTO>>(jsonformOfresult);
+            List<PhysiotherapistDTO> physioDto = new List<PhysiotherapistDTO>();
+            if (result.ReturnObj != null)
+            {
+                string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
+                physioDto = JsonConvert.DeserializeObject<List<PhysiotherapistDTO>>(jsonformOfresult);
+            }
+
+
             return new ResponseModel
             {
                 Status = true,
@@ -81,8 +101,9 @@ namespace Services.Implementations
                 ReturnObj = new
                 {
                     Patient = patient,
-                    Physiotherapist = physiotherapists,
-                    Notification = notifications
+                    Physiotherapist = physioDto,
+                    Notification = notifications,
+                    PhysiotherapistCount = physioDto.Count
                 }
             };
 

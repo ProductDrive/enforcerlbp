@@ -13,7 +13,7 @@ namespace DTOs.RequestObject
         public string Category { get; set; }
         public bool IsSuggested { get; set; }
 
-        public DateTime DateCreated { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.Now;
     }
 
 }

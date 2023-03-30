@@ -15,12 +15,13 @@ namespace enforcerWeb.Helper
         {
             CreateMap<PhysiotherapistDTO, Physiotherapist>();
             CreateMap<Physiotherapist, PhysiotherapistDTO>();
+            CreateMap<IList<Physiotherapist>, IList<PhysiotherapistDTO>>();
             CreateMap<PatientDTO, Patient>();
             CreateMap<Patient, PatientDTO>();
             CreateMap<AppUserDTO, PhysiotherapistDTO>();
             CreateMap<AppUserDTO, PatientDTO>();
-            CreateMap<ConnectionRequestDTO, PatientTherapist>();
-            CreateMap<PatientTherapist, ConnectionRequestDTO>();
+            CreateMap<ConnectionsDTO, PatientTherapist>();
+            CreateMap<PatientTherapist, ConnectionsDTO>();
             CreateMap<Notification, NotificationCommand>();
             CreateMap<NotificationCommand, Notification>();
             CreateMap<ExercisePrescription, ExercisePrescriptionDTO>();

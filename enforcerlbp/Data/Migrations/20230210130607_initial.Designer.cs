@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Migrations
 {
     [DbContext(typeof(EnforcerContext))]
-    [Migration("20221228200528_repairFeedback")]
-    partial class repairFeedback
+    [Migration("20230210130607_initial")]
+    partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -316,6 +316,9 @@ namespace Data.Migrations
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("OwnersName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FeedbackId");
@@ -476,8 +479,11 @@ namespace Data.Migrations
                     b.Property<string>("ProfilePictureUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("Ratings")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("RatingData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Ratings")
+                        .HasColumnType("float");
 
                     b.Property<string>("Speciality")
                         .HasColumnType("nvarchar(max)");

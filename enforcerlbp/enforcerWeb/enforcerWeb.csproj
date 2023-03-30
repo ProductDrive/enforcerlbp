@@ -36,5 +36,8 @@
 	  <ProjectReference Include="..\Infrastructures\Infrastructures.csproj" />
 	  <ProjectReference Include="..\Services\Services.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Logs\" />
+	</ItemGroup>
 
 </Project>

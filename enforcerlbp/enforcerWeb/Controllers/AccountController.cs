@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using Serilog;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -33,8 +35,10 @@ namespace enforcerWeb.Controllers
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
+        private readonly IGeneralService _generalService;
         private readonly JwtSettings _jwtSettings;
 
+        #region Constructor
         public AccountController(
             IMediator mediatR,
             IOptions<JwtSettings> jwtSettings,
@@ -42,7 +46,8 @@ namespace enforcerWeb.Controllers
             RoleManager<IdentityRole> roleManager,
             IMapper mapper,
             IConfiguration configuration,
-            IUserService userService)
+            IUserService userService,
+            IGeneralService generalService)
         {
             _mediatR = mediatR;
             _userManager = userManager;
@@ -50,11 +55,12 @@ namespace enforcerWeb.Controllers
             _mapper = mapper;
             _configuration = configuration;
             _userService = userService;
+            _generalService = generalService;
             _jwtSettings = jwtSettings.Value;
         }
+        #endregion
 
-        [HttpPost]
-        [Route("Therapist")]
+        [HttpPost("Therapist")]
         public async Task<IActionResult> RegisterATherapist([FromBody] AppUserDTO model)
         {
 
@@ -63,7 +69,8 @@ namespace enforcerWeb.Controllers
                 var response = await CreateAppUser(model, "Physiotherapist");
                 if (response.ReturnModel != null && response.ReturnModel.Status == false)
                 {
-                    return StatusCode(500, response.ReturnModel);
+                    Log.Fatal($"{response.ReturnModel.Response}>>>>>{JsonConvert.SerializeObject(model)}");
+                    return StatusCode(200, response.ReturnModel);
                 }
 
 
@@ -81,7 +88,8 @@ namespace enforcerWeb.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel { Status = false, Errors = { ex.Message } });
+                Log.Fatal($"{ex.Message ?? ex.InnerException.Message}>>>>>{JsonConvert.SerializeObject(model)}");
+                return StatusCode(200, new ResponseModel { Status = false, Errors = { ex.Message } });
             }
         }
 
@@ -94,7 +102,8 @@ namespace enforcerWeb.Controllers
                 var response = await CreateAppUser(model, "Patient");
                 if (response.ReturnModel != null && response.ReturnModel.Status == false)
                 {
-                    return StatusCode(500, response.ReturnModel);
+                    Log.Fatal($"{response.ReturnModel.Response}>>>>>{JsonConvert.SerializeObject(model)}");
+                    return StatusCode(200, response.ReturnModel);
                 }
                 var patient = _mapper.Map<PatientDTO>(model);
                 patient.ID = Guid.Parse(response.User.Id);
@@ -109,7 +118,8 @@ namespace enforcerWeb.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel { Status = false, Errors = { ex.Message } });
+                Log.Fatal($"{ex.Message ?? ex.InnerException.Message}>>>>>{JsonConvert.SerializeObject(model)}");
+                return StatusCode(200, new ResponseModel { Status = false, Errors = { ex.Message } });
             }
         }
 
@@ -264,15 +274,35 @@ namespace enforcerWeb.Controllers
             //check that the user is not null and that his password is correct
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                var jwtTokenResponse  = await GenerateJwtToken(user);
+                var jwtTokenResponse = await GenerateJwtToken(user);
                 return jwtTokenResponse;
             }
             //return an authorization error if the checks fail
             return new ResponseModel { Response = "Username or password invalid, please try again with correct details.", Status = false };
         }
 
-        [Route("ForgotPassword/{email}")]
-        [HttpPost]
+        [HttpGet("dashboard")]
+        [Authorize(Policy = "AppUser")]
+        public async Task<ResponseModel> GetDashboard()
+        {
+            var res = new ResponseModel();
+            var myClaims = User.Claims;
+            try
+            {
+                var userID = myClaims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
+                var userRoles = myClaims.First(x => x.Type == ClaimTypes.Role).Value;
+
+                res = userRoles == "Patient" ? await _generalService.GetPatientDashboardData(Guid.Parse(userID)) : await _generalService.GetTherapistDashboardData(Guid.Parse(userID));
+            }
+            catch (Exception)
+            {
+                return new ResponseModel { Status = false, Response = "Failed: Session expired. Kindly login again" };
+            }
+
+            return res;
+        }
+
+       [HttpPost("ForgotPassword/{email}")]
         public async Task<ActionResult<ResponseModel>> ForgotPassword([FromRoute] string email)
         {
             //check that the email is not empty
@@ -320,8 +350,7 @@ namespace enforcerWeb.Controllers
             }
         }
 
-        [HttpPost]
-        [Route("passwordreset")]
+        [HttpPost("passwordreset")]
         public async Task<ResponseModel> ResetPassword(PasswordResetDTO model)
         {
             try
@@ -365,8 +394,9 @@ namespace enforcerWeb.Controllers
             return new ResponseModel { Status = false, Response = "something went wrong" }; ;
         }
 
-        [Authorize(Policy ="AppUser")]
+        
         [HttpGet]
+        [Authorize(Policy = "AppUser")]
         public async Task<ResponseModel> GetMyProfile()
         {
             var res = new ResponseModel();
@@ -386,7 +416,8 @@ namespace enforcerWeb.Controllers
             return res;
         }
 
-        [HttpPut("therapist")]
+        [HttpPost]
+        [Route("edit/therapist/{Id}")]
         [Authorize(Policy = "Therapist")]
         public async Task<ResponseModel> EditPhysiotherapist(Guid Id, PhysiotherapistDTO request) => await _userService.UpdatePhysiotherapist(Id, request);
 
