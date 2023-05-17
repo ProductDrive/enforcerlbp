@@ -33,6 +33,29 @@ namespace enforcerWeb.Controllers
         //[Authorize(Policy = "Admin")]
         public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
 
+        [HttpPost("uploadmany")]
+        [AllowAnonymous]
+        //[Authorize(Policy = "Admin")]
+        public async Task<IActionResult> AddManyExercise(List<UploadExerciseDTO> models)
+        {
+            foreach (var model in models)
+            {
+
+                await _exerciseService.CreateExercise(
+                    new ExerciseDTO
+                    {
+                        Category = model.Category,
+                        DateCreated = DateTime.Now,
+                        Description = model.Description,
+                        FileUrl = model.VideoURL,
+                        ID = Guid.NewGuid(),
+                        IsSuggested = false,
+                        Name = model.Name
+                    });
+            }
+            return Ok();
+        }
+
         [HttpGet]
         [Authorize(Policy = "Users")]
         public async Task<ResponseModel> GetOneExercise(Guid Id) => await _exerciseService.GetExercise(Id);
