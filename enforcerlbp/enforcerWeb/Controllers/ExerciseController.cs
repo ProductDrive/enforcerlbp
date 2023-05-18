@@ -70,11 +70,11 @@ namespace enforcerWeb.Controllers
         {
 
             var result = await _exerciseService.CompleteExercise(exerComplete);
-            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
+            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result.ReturnObj));
 
             // Send notification to physiotherapist
             var ownerIds = new List<Guid>() { execPrescribed.PhysiotherapistId};
-            string gender = execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her";
+            string gender = execPrescribed.Patient.Gender?.ToLower() == "male" ? "his" : "her";
             string message = $"{execPrescribed.Patient.FirstName} completed {gender} exercise";
             await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
             //send email
