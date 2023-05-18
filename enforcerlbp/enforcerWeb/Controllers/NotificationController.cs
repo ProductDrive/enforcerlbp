@@ -41,7 +41,7 @@ namespace enforcerWeb.Controllers
         [HttpGet("active")]
         public int GetNotificationCount(Guid ownerId) => _userService.MyNotifications(ownerId);
 
-        [HttpPut("markasread")]
+        [HttpGet("markasread")]
         public async Task<ResponseModel> UpdateNotificationAsRead(Guid notificationId) => await _userService.ReadNotification(notificationId);
 
         [HttpDelete("markasdelete")]
