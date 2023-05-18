@@ -4,6 +4,7 @@ using Entities.Documents;
 using Firebase.Auth;
 using Firebase.Storage;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Services.Interfaces;
 using System;
@@ -19,11 +20,22 @@ namespace Services.Implementations
     public class Firebase : IFirebase
     {
         //private readonly IOptions<FirebaseFileStore> _firebaseStore;
-        private readonly FirebaseFileStore _firebaseStore;
+        private FirebaseFileStore _firebaseStore { get; set; }
 
-        public Firebase(IOptions<FirebaseFileStore> firebaseStore)
+        //public Firebase(IOptions<FirebaseFileStore> firebaseStore)
+        //{
+        //    _firebaseStore = firebaseStore.Value;
+        //}
+        public IConfiguration Configuration { get; }
+        public Firebase(IConfiguration configuration)
         {
-            _firebaseStore = firebaseStore.Value;
+            Configuration = configuration;
+            _firebaseStore = new FirebaseFileStore();
+            _firebaseStore.ApiKey = Configuration["FirebaseFileStore:ApiKey"];
+            _firebaseStore.AuthEmail = Configuration["FirebaseFileStore:AuthEmail"];
+            _firebaseStore.AuthPassword = Configuration["FirebaseFileStore:AuthPassword"];
+            _firebaseStore.Bucket = Configuration["FirebaseFileStore:Bucket"];
+            
         }
 
         public async Task <string> FirebaseFileUpload(IFormFile file, string folderName)

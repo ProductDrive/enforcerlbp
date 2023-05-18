@@ -135,6 +135,7 @@ namespace enforcerWeb.Controllers
                 return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Password is required!" }, Response= "Password is required!" });
             }
 
+            model.PhoneNumber = FormatPhoneNumber(model.PhoneNumber);
             var userExists = await _userManager.FindByNameAsync(emailToUse);
 
             if (userExists != null)
@@ -169,6 +170,27 @@ namespace enforcerWeb.Controllers
 
             }
             return (null, new ResponseModel { Status = false, Errors = new List<string>() { "Invalid payload!" } });
+        }
+        // TODO: format phone number internationally using phone util
+        private string FormatPhoneNumber(string phone)
+        {
+            //check null or empty OR check if less than 11 save it like that OR check if 14
+            if (string.IsNullOrWhiteSpace(phone) || phone.Length < 11 || phone.Length == 14)
+            {
+                return phone;
+            }
+
+            //check if its 11 remove first 0 add +234
+            if (phone.Length == 11)
+            {
+                if (phone.First() == '0')
+                {
+                    var trimmed = phone.Remove(0,1);
+                    phone = string.Concat("+234", trimmed);
+                }
+            }
+
+            return phone;
         }
 
         private async Task<ResponseModel> GenerateJwtToken(EnforcerUser user) //IdentityUser user
@@ -235,8 +257,9 @@ namespace enforcerWeb.Controllers
                     return true;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Fatal($"{ex.Message ?? ex.InnerException.Message}>>>>> RoleName:{roleName}");
                 return false;
             }
         }
@@ -278,6 +301,7 @@ namespace enforcerWeb.Controllers
                 return jwtTokenResponse;
             }
             //return an authorization error if the checks fail
+            Log.Fatal($"Username or password invalid, please try again with correct details.>>>>>{JsonConvert.SerializeObject(model)}");
             return new ResponseModel { Response = "Username or password invalid, please try again with correct details.", Status = false };
         }
 
@@ -408,8 +432,9 @@ namespace enforcerWeb.Controllers
 
                 res = userRoles == "Patient" ? await _userService.GetAPatient(Guid.Parse(userID)) : await _userService.GetAPhysioTherapist(Guid.Parse(userID));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Fatal($"{ex.Message ?? ex.InnerException.Message}>>>>> Trying to get App user");
                 return new ResponseModel { Status = false, Response = "Failed: Session expired. Kindly login again" };
             }
 

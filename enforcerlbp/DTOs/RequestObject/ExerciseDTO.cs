@@ -16,4 +16,12 @@ namespace DTOs.RequestObject
         public DateTime DateCreated { get; set; } = DateTime.Now;
     }
 
+    public class UploadExerciseDTO
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string VideoURL { get; set; }
+        public string Category { get; set; }
+    }
+
 }

@@ -33,6 +33,29 @@ namespace enforcerWeb.Controllers
         //[Authorize(Policy = "Admin")]
         public async Task<ResponseModel> AddExercise(ExerciseDTO model) => await _exerciseService.CreateExercise(model);
 
+        [HttpPost("uploadmany")]
+        [AllowAnonymous]
+        //[Authorize(Policy = "Admin")]
+        public async Task<IActionResult> AddManyExercise(List<UploadExerciseDTO> models)
+        {
+            foreach (var model in models)
+            {
+
+                await _exerciseService.CreateExercise(
+                    new ExerciseDTO
+                    {
+                        Category = model.Category,
+                        DateCreated = DateTime.Now,
+                        Description = model.Description,
+                        FileUrl = model.VideoURL,
+                        ID = Guid.NewGuid(),
+                        IsSuggested = false,
+                        Name = model.Name
+                    });
+            }
+            return Ok();
+        }
+
         [HttpGet]
         [Authorize(Policy = "Users")]
         public async Task<ResponseModel> GetOneExercise(Guid Id) => await _exerciseService.GetExercise(Id);
@@ -47,11 +70,11 @@ namespace enforcerWeb.Controllers
         {
 
             var result = await _exerciseService.CompleteExercise(exerComplete);
-            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result));
+            var execPrescribed = JsonConvert.DeserializeObject<ExercisePrescription>(JsonConvert.SerializeObject(result.ReturnObj));
 
             // Send notification to physiotherapist
             var ownerIds = new List<Guid>() { execPrescribed.PhysiotherapistId};
-            string gender = execPrescribed.Patient.Gender.ToLower() == "male" ? "his" : "her";
+            string gender = execPrescribed.Patient.Gender?.ToLower() == "male" ? "his" : "her";
             string message = $"{execPrescribed.Patient.FirstName} completed {gender} exercise";
             await _mediatR.Send(NotificationHelper.GetNotificationModelManyOwnersOneMessage(ownerIds, message));
             //send email

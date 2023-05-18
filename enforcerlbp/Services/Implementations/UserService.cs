@@ -468,8 +468,12 @@ namespace Services.Implementations
         {
             var isConnected = _unitOfWorkPatientTherapist.Repository.GetAllQuery()
                 .FirstOrDefault(x => x.PatientID == request.PatientID && x.PhysiotherapistID == request.PhysiotherapistID);
-            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.accepted) return new ResponseModel { Status = false, Response = $"You are already a connection" };
-            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.sent) return new ResponseModel { Status = false, Response = $"Your connection request has been sent earlier but has not been accepted. Kindly reach out to the physiotherapist" };
+            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.accepted) 
+                return new ResponseModel { Status = false, Response = $"You are already a connection" };
+            
+            if (isConnected != null && isConnected.ConnectionStatus == ConnectionStatus.sent) 
+                return new ResponseModel { Status = false, Response = $"Your connection request has been sent earlier but has not been accepted. Kindly reach out to the physiotherapist" };
+            
             if (isConnected != null && (isConnected.ConnectionStatus == ConnectionStatus.rejected || isConnected.ConnectionStatus == ConnectionStatus.disconnected))
             {
                 request.ConnectionStatus = ConnectionStatus.sent;
@@ -479,6 +483,10 @@ namespace Services.Implementations
             try
             {
                 var patPhy = _mapper.Map<PatientTherapist>(request);
+                if (patPhy.PatientID == Guid.Empty)
+                {
+                    return new ResponseModel { Status = false, Response = $"Something went wrong! Kindly Logout and Login again and then send request" };
+                }
                 patPhy.ConnectionStatus = ConnectionStatus.sent;
                 await _unitOfWorkPatientTherapist.Repository.Create(patPhy);
 

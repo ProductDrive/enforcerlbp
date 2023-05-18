@@ -1,5 +1,6 @@
 ﻿using DTOs.RequestObject;
 using DTOs.ResponseObject;
+using Entities;
 using Newtonsoft.Json;
 using Services.Interfaces;
 using System;
@@ -90,9 +91,21 @@ namespace Services.Implementations
             if (result.ReturnObj != null)
             {
                 string jsonresult = JsonConvert.SerializeObject(result.ReturnObj);
-                physioDto = JsonConvert.DeserializeObject<List<PhysiotherapistDTO>>(jsonformOfresult);
+                physioDto = JsonConvert.DeserializeObject<List<PhysiotherapistDTO>>(jsonresult);
             }
 
+            //health records
+            var healthresult = await _exerciseService.GetAPrescription(patientID);
+            var healthRec = new HealthRecordDTO();
+            List<ExercisePrescription> patientExerciseRec = new List<ExercisePrescription>();
+            if (result.ReturnObj != null)
+            {
+                string jsonExerresult = JsonConvert.SerializeObject(healthresult.ReturnObj);
+                patientExerciseRec = JsonConvert.DeserializeObject<List<ExercisePrescription>>(jsonExerresult);
+                healthRec.CompletedExercises = patientExerciseRec?.Count(x => x.IsCompleted) ?? 0;
+                healthRec.OngoingExercises = patientExerciseRec?.Count(x => !x.IsCompleted) ?? 0;
+                healthRec.TotalPrescribedExercise = patientExerciseRec?.Count() ?? 0;
+            }
 
             return new ResponseModel
             {
@@ -103,7 +116,8 @@ namespace Services.Implementations
                     Patient = patient,
                     Physiotherapist = physioDto,
                     Notification = notifications,
-                    PhysiotherapistCount = physioDto.Count
+                    PhysiotherapistCount = physioDto.Count,
+                    HealthRecord = healthRec
                 }
             };
 

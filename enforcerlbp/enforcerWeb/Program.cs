@@ -24,8 +24,6 @@ namespace enforcerWeb
             {
                 CreateHostBuilder(args).Build().Run();
                 Log.Fatal($"----------------------------Application started...");
-                
-                
             }
             catch (Exception ex)
             {
