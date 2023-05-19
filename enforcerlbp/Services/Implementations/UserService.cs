@@ -150,14 +150,14 @@ namespace Services.Implementations
                 new VerificationDocument
                 {
                     PhysiotherapistID = document.PhysiotherapistId,
-                    NameOfDocument = document.NameOfDocument,
+                    NameOfDocument = document?.DegreeCert?.Name ?? "DegreeCert",
                     DocumentUrl = returnedDegreeUrl
 
                 },
                 new VerificationDocument
                 {
                     PhysiotherapistID = document.PhysiotherapistId,
-                    NameOfDocument = document.NameOfDocument,
+                    NameOfDocument = document?.License?.Name ?? "License",
                     DocumentUrl = returnedLicenseUrl
 
                 }
