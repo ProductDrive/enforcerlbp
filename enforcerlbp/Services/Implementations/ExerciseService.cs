@@ -199,6 +199,22 @@ namespace Services.Implementations
 
         }
 
+        public async Task<ResponseModel> DeclineExercisePrescription(Guid prescriptionId)
+        {
+            try
+            {
+                var execPrescribed = await _unitOfWorkExercisePrescription.Repository.GetByID(prescriptionId);
+                execPrescribed.IsCompleted = false;
+                _unitOfWorkExercisePrescription.Repository.Update(execPrescribed);
+                await _unitOfWorkExercisePrescription.Save();
+                return new ResponseModel { Status = true, Response = "Declined Successfully" };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel { Status = false, Response = "An error occured while trying to decline. Contact Admin", Errors = new List<string> {ex.InnerException.Message ?? ex.Message } };
+            }
+        }
+
         private async Task<ResponseModel> UploadFileForExercise(ExerciseCompleteDTO completeExercise)
         {
             string[] allowedExtensions = { ".mp4", ".wav", ".3pg", ".mov", ".webm", "flv", ".wmv", ".avi" };

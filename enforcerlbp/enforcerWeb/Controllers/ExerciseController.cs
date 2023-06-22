@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Serilog;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -164,6 +165,21 @@ namespace enforcerWeb.Controllers
                 Message = message
             });
             return Ok(result);
+        }
+
+        [HttpGet("decline")]
+        [Authorize(Policy = "Therapist")]
+        public async Task<ResponseModel> AddExercisePrescription(Guid exerciseId)
+        {
+            var result = await _exerciseService.DeclineExercisePrescription(exerciseId);
+            if (result.Errors?.Any() ?? false)
+            {
+                Log.Fatal($"Enpoint:api/exercise/decline; Method: DeclineExercisePrescription; prescritionId{exerciseId} === Error: {result.Errors.First()}");
+                result.Errors = null;
+                return result;
+            }
+            return result;
+
         }
 
         //FEEDBACK ENDPOINTS

@@ -325,15 +325,6 @@ namespace Services.Implementations
         }
 
 
-        //private ResponseModel RetrieveConnections(Guid ownerId)
-        //{
-            
-        //}
-
-
-
-
-
         public ResponseModel GetAllConnections(Guid ownerId)
         {
             //1. get all users records frome PT table 2.check if any 3. if patient? call every pysio 4. if pysio call every patients 
