@@ -6,6 +6,7 @@ using Firebase.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Serilog;
 using Services.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -60,15 +61,16 @@ namespace Services.Implementations
                             AuthTokenAsyncFactory = () => Task.FromResult(authLink.FirebaseToken),
                             ThrowOnCancel = true // when you cancel the upload, exception is thrown. By default no exception is thrown
                         })
-                        .Child(folderName)
-                        .Child(file.FileName)
+                        .Child(folderName.Split('|')[0])
+                        .Child(file.FileName + folderName.Split('|')[1])
 
                         .PutAsync(ms, cancellation.Token);
 
                     return  uploadedFileUrl;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Log.Fatal($"Error occured while uploading exercise to firbase.>>>>>{ex.InnerException.Message ?? ex.Message}");
                     return "";
 
                 }
